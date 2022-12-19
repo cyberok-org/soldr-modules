@@ -108,7 +108,7 @@ module.exports = {
     data: () => ({
         height: 100,
         timerId: undefined,
-        sqlQuery: `SELECT * FROM files ORDER BY id DESC;`,
+        sqlQuery: `SELECT * FROM files ORDER BY id DESC LIMIT 0,100;`,
         filepath: "",
         connection: undefined,
         queryColumns: [],
@@ -252,7 +252,11 @@ module.exports = {
                             })),
                     }));
                 this.queryData = result.rows.map((r) => r.reduce((a, x, i) => ({...a, [result.cols[i]]: x}), {}));
-                this.resizeTable();
+                let h = this.$refs.boxTable.clientHeight
+                if (h === 0) {
+                    this.height = 100;
+                }
+                this.height = h + 70 * result.rows.length + 20;
             } else if (result.type == "exec_upload_resp") {
                 this.$root.NotificationsService.success(`${this.locale[this.$i18n.locale]['checkSuccess']}`);
             } else {
@@ -296,9 +300,6 @@ module.exports = {
                 this.queryData = [];
                 this.execSQL();
             }
-        },
-        resizeTable() {
-            this.height = this.$refs.boxTable.clientHeight;
         },
         getColWidth(array, min) {
             const n = array.length;
