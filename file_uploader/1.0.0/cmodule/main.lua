@@ -157,15 +157,10 @@ local function exec_action(dst, action_name, action_data)
     local existingFile = {}
     local filename = luapath.file(object_value)
     local filesize = fs.attr(object_value, "size")
-    local file_size_limit = get_option_config("file_size_limit") * 1024 * 1024
     if filesize == nil then
         reason = "file_not_found"
         result = false
         __log.errorf("can't get file '%s' size", object_value)
-    elseif filesize > file_size_limit then
-        reason = "file_size_exceeded"
-        result = false
-        __log.errorf("exceeded file size (%d > %d) for '%s'", filesize, file_size_limit, object_value)
     else
         local md5_digest, sha256_digest = md5.digest(), sha2.sha256_digest()
         local file = io.open(object_value, "rb")

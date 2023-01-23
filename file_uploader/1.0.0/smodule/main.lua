@@ -101,9 +101,10 @@ __api.add_cbs({
                     __log.infof("response routed to '%s' with result %s", dst, send_res)
                     __log.debugf("response routed to '%s' with result %s", dst, send_res)
                 elseif msg_data.name == "fu_download_object_file" then
-                    msg_data.type = "exec_download_resp"
                     if #msg_data.existing_file == 0 then
                         local fl = uploader.storage:GetFileInfoByHash(msg_data.data.md5_hash, msg_data.data.sha256_hash)
+                        local send_res = __api.send_file_from_fs_to(dst, fl.local_path, fl.filename) 
+                        __log.infof("file sent from server to '%s' with result %s", dst, send_res)
                         msg_data.existing_file = fl
                     end
                     local send_res = __api.send_data_to(dst, cjson.encode(msg_data))

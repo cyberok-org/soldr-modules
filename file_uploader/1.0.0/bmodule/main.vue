@@ -117,6 +117,7 @@ module.exports = {
         timerId: undefined,
         sqlQuery: `SELECT * FROM files ORDER BY id DESC LIMIT 0, 100;`,
         filepath: "",
+        downloads: {},
         connection: undefined,
         queryColumns: [],
         queryData: [],
@@ -143,6 +144,7 @@ module.exports = {
                 fileNotFoundError: "Файл не найден или недоступен",
                 fileSizeError: "Превышен максимальный размер файла",
                 filePathError: "Путь к файлу задан некорректно",
+                downloadCanceledError: "Загрузка файла отменена",
                 fileInProcess: "Началась загрузка файла во внешнюю систему",
                 checkSuccess: "Файл отправлен во внешнюю систему",
                 recvError: "Не удалось выполнить SQL-запрос",
@@ -171,6 +173,7 @@ module.exports = {
                 fileNotFoundError: "File not found or not available",
                 fileSizeError: "File size exceeded",
                 filePathError: "Invalid file path",
+                downloadCanceledError: "File download canceled",
                 fileInProcess: "Started uploading a file to an external system",
                 checkSuccess: "File is sent to external system",
                 recvError: "Failed to execute SQL query",
@@ -196,6 +199,7 @@ module.exports = {
                     const date = new Date().toLocaleTimeString();
                     this.connection = connection;
                     this.connection.subscribe(this.recvData, "data");
+                    this.connection.subscribe(this.recvFile, "file");
                     this.$root.NotificationsService.success(`${date} ${this.locale[this.$i18n.locale]['connected']}`);
                 },
                 error => {
@@ -230,6 +234,61 @@ module.exports = {
         }
     },
     methods: {
+        async recvFile(file) {
+            if (this.isNewFSAPISupported()) {
+                await this.downloadChunkNewAPI(file);
+                return;
+            }
+            await this.downloadChunk(file);
+        },
+        async downloadChunkNewAPI(file) {
+            let stream = this.downloads[file.content.name];
+            await stream.write(file.content.data);
+            const uniq = file.content.uniq.split(":")
+            const partNum = parseInt(uniq[1]);
+            const partTotal = parseInt(uniq[2]);
+            console.log("got part %d from %d", partNum, partTotal);
+            if (partNum == partTotal) {
+                await stream.close();
+                delete this.downloads[file.content.name];
+            }
+        },
+        async downloadChunk(file) {
+            if (file.content.name in this.downloads === false) {
+                this.downloads[file.content.name] = new Array();
+            }
+            let chunks = this.downloads[file.content.name];
+            chunks.push(file.content.data);
+            const uniq = file.content.uniq.split(":")
+            const partNum = parseInt(uniq[1]);
+            const partTotal = parseInt(uniq[2]);
+            console.log("got part %d from %d", partNum, partTotal);
+            if (partNum == partTotal) {
+                let link = document.createElement("a");
+                link.download = file.content.name;
+                link.href = URL.createObjectURL(new Blob(chunks, {type:"application/octet-stream"}));
+                link.click();
+                link.remove();
+                delete this.downloads[file.content.name];
+            }
+        },
+        isNewFSAPISupported(){
+            return (typeof window["showSaveFilePicker"] == "function");
+        },
+        async saveFile(filepath) {
+            if(!this.isNewFSAPISupported()) {
+                return true;
+            }
+            var filename = filepath.split(/[\\\/]/).pop();
+            try{
+                const newHandle = await window.showSaveFilePicker({suggestedName: filename});
+                const writableStream = await newHandle.createWritable();
+                this.downloads[filename] = writableStream;
+            }catch(e){
+                return false
+            }
+            return true;
+        },
         recvData(msg) {
             let data = new TextDecoder("utf-8").decode(msg.content.data);
             let result = JSON.parse(data);
@@ -316,13 +375,19 @@ module.exports = {
                 this.connection.sendAction(data, actionName);
             }
         },
-        submitDownloadFile() {
+        async submitDownloadFile() {
             this.lastExecError = "";
             let filepath = this.filepath.trim();
             if (filepath === "" || filepath.length > 256) {
                 this.lastExecError = this.locale[this.$i18n.locale]['filePathError'];
                 this.$root.NotificationsService.error(this.lastExecError);
             } else {
+                const shouldContinue = await this.saveFile(filepath)
+                if (!shouldContinue) {
+                    this.lastExecError = this.locale[this.$i18n.locale]['downloadCanceledError'];
+                    this.$root.NotificationsService.error(this.lastExecError);
+                    return
+                }
                 let actionName = "fu_download_object_file";
                 let data = JSON.stringify({
                     data: {"object.fullpath": filepath},
