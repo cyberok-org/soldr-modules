@@ -1,0 +1,14 @@
+{
+    "1.0.0": {
+        "en": {
+            "date": "02-22-2023",
+            "title": "Base functionality",
+            "description": "Base functionality"
+        },
+        "ru": {
+            "date": "22.02.2023",
+            "title": "Базовая функциональность",
+            "description": "Базовая функциональность"
+        }
+    }
+}

@@ -1,0 +1,20 @@
+{
+    "module": {
+        "en": {
+            "title": "Sandbox (cyberok)",
+            "description": "Sends files for checking to a sandbox"
+        },
+        "ru": {
+            "title": "Sandbox (cyberok)",
+            "description": "Отправляет файлы на проверку в песочницу"
+        }
+    },
+    "config": {},
+    "secure_config": {},
+    "fields": {},
+    "actions": {},
+    "events": {},
+    "action_config": {},
+    "event_config": {},
+    "tags": {}
+}
