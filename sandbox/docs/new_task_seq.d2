@@ -1,17 +1,15 @@
 shape: sequence_diagram
 
-browser; server; SQLite; agent; Cuckoo
+browser; server; SQLite; agent
 
-User creates a new scan task {
-	browser.a .With filename
-	browser.a -> server.a: :Action SCAN (filename)
-	server.a -> SQLite :New task record
-	browser <- server.a :Notify about new task
-	server.a -> agent.a :Action SCAN (task_id, filename)
-	server.b <- agent.a :Receive file (task_id)
-	server.b -> SQLite: Update task:\npending, hash
-	server.b -> Cuckoo: POST the file
-	server.b -> SQLite: Update task:\nscanning
-}
+browser.a.With filename
+browser.a -> server.a: Action: scan\n(filename)
+server.a -> SQLite: New task
+browser <- server.a: Notify about new task
+server.a -> agent.a: Action: scan\n(task_id, filename)
+server.b <- agent.a: Receive file\n(task_id)
+server.b -> SQLite: Update task:\npending, hash
+server.b -> Cuckoo: POST file
+server.b -> SQLite: Update task:\nscanning
 
 SQLite {shape: cylinder}
