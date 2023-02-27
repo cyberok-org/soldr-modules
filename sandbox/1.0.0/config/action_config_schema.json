@@ -1,6 +1,45 @@
 {
     "additionalProperties": false,
-    "properties": {},
-    "required": [],
+    "properties": {
+        "cyberok_sandbox_scan": {
+            "allOf": [
+                {
+                    "$ref": "#/definitions/base.action"
+                },
+                {
+                    "properties": {
+                        "fields": {
+                            "default": [
+                                "object.fullpath"
+                            ],
+                            "items": {
+                                "enum": [
+                                    "object.fullpath"
+                                ],
+                                "type": "string"
+                            },
+                            "maxItems": 1,
+                            "minItems": 1,
+                            "type": "array"
+                        },
+                        "priority": {
+                            "default": 10,
+                            "maximum": 10,
+                            "minimum": 10,
+                            "type": "integer"
+                        }
+                    },
+                    "required": [
+                        "fields",
+                        "priority"
+                    ],
+                    "type": "object"
+                }
+            ]
+        }
+    },
+    "required": [
+        "cyberok_sandbox_scan"
+    ],
     "type": "object"
 }

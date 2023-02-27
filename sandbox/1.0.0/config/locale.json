@@ -2,7 +2,7 @@
     "module": {
         "en": {
             "title": "Sandbox (cyberok)",
-            "description": "Sends files for checking to a sandbox"
+            "description": "Sends files for checking to sandbox"
         },
         "ru": {
             "title": "Sandbox (cyberok)",
@@ -11,10 +11,34 @@
     },
     "config": {},
     "secure_config": {},
-    "fields": {},
-    "actions": {},
+    "fields": {
+        "object.fullpath": {
+            "en": {
+                "title": "object.fullpath",
+                "description": "object.fullpath"
+            },
+            "ru": {
+                "title": "object.fullpath",
+                "description": "object.fullpath"
+            }
+        }
+    },
+    "actions": {
+        "cyberok_sandbox_scan": {
+            "en": {
+                "title": "Send to sandbox",
+                "description": "Sends a file for checking to sandbox"
+            },
+            "ru": {
+                "title": "Отправить в песочницу",
+                "description": "Отправляет файл на проверку в песочницу"
+            }
+        }
+    },
     "events": {},
-    "action_config": {},
+    "action_config": {
+        "cyberok_sandbox_scan": {}
+    },
     "event_config": {},
     "tags": {}
 }

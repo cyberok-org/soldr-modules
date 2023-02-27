@@ -1,1 +1,8 @@
-{}
+{
+    "cyberok_sandbox_scan": {
+        "fields": [
+            "object.fullpath"
+        ],
+        "priority": 10
+    }
+}

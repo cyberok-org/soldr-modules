@@ -20,8 +20,12 @@
         ]
     },
     "system": false,
-    "actions": [],
+    "actions": [
+        "cyberok_sandbox_scan"
+    ],
     "events": [],
-    "fields": [],
+    "fields": [
+        "object.fullpath"
+    ],
     "tags": []
 }
