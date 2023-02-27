@@ -1,0 +1,21 @@
+server.vxserver -- browser
+server.vxserver -- cuckoo
+server.vxserver -- agent.vxagent
+
+server: {
+  SQLite -- vxserver
+  SQLite {shape: cylinder}
+}
+
+direction: right
+
+browser: {
+  shape: image
+  icon: https://icons.terrastruct.com/tech%2Fbrowser-2.svg
+  height: 80
+}
+cuckoo: "" {
+  shape: image
+  icon: https://cuckoosandbox.org/assets/images/cuckoo-black.png
+  height: 80
+}
