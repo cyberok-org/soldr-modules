@@ -46,16 +46,22 @@
           buttonExecAction: "Проверить файл",
           connected: "— подключение к серверу установлено",
           connServerError: "Не удалось подключиться к серверу",
+          connAgentError: "Не удалось подключиться к агенту",
           filePathError: "Путь к файлу задан некорректно",
           filePl: "Путь к файлу",
+          scanRequestLoading: "Запрос был отправлен",
+          unknownMessageError: "Получен неизвестный тип сообщения",
         },
         en: {
           api: "File scan",
           buttonExecAction: "Scan",
           connected: "— connection to the server established",
           connServerError: "Failed to connect to the server",
+          connAgentError: "Failed to connect to the agent",
           filePathError: "Invalid file path",
           filePl: "File path",
+          scanRequestLoading: "Request has been sent",
+          unknownMessageError: "Received unknown message type",
         },
       },
     }),
@@ -65,6 +71,7 @@
           (connection) => {
             const date = new Date().toLocaleTimeString();
             this.connection = connection;
+            this.connection.subscribe(this.onData, "data");
             this.$root.NotificationsService.success(
               `${date} ${this.locale[this.$i18n.locale]["connected"]}`
             );
@@ -81,6 +88,19 @@
       this.leftTab = this.viewMode === "agent" ? "api" : undefined;
     },
     methods: {
+      onData(packet) {
+        let data = new TextDecoder("utf-8").decode(packet.content.data);
+        let msg = JSON.parse(data);
+        if ((msg.type = "connection_error")) {
+          this.$root.NotificationsService.error(
+            this.locale[this.$i18n.locale]["connAgentError"]
+          );
+        } else {
+          this.$root.NotificationsService.error(
+            this.locale[this.$i18n.locale]["unknownMessageError"]
+          );
+        }
+      },
       submitReqToExecAction() {
         this.lastExecError = "";
         let filepath = this.filepath.trim();
@@ -88,8 +108,13 @@
           this.lastExecError = this.locale[this.$i18n.locale]["filePathError"];
           this.$root.NotificationsService.error(this.lastExecError);
         } else {
-          this.lastExecError = "not implemented yet";
-          this.$root.NotificationsService.error(this.lastExecError);
+          let data = JSON.stringify({
+            data: { "object.fullpath": filepath },
+          });
+          this.connection.sendAction(data, "cyberok_sandbox_scan");
+          this.$root.NotificationsService.success(
+            this.locale[this.$i18n.locale]["scanRequestLoading"]
+          );
         }
       },
     },

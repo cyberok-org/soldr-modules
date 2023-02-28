@@ -1,8 +1,12 @@
+local cjson = require("cjson.safe")
 local function update_config()
 end
 update_config()
 
 local function action_scan(src, data, name)
+	local res = __api.send_data_to(src, cjson.encode({
+		type = "connection_error",
+	}))
 	return true
 end
 
