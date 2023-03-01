@@ -1,6 +1,13 @@
 {
     "additionalProperties": true,
     "properties": {
+        "message": {
+            "rules": {},
+            "type": "string",
+            "ui": {
+                "widgetConfig": {}
+            }
+        },
         "object.fullpath": {
             "rules": {},
             "type": "string",

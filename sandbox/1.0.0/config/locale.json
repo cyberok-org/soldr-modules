@@ -12,14 +12,24 @@
     "config": {},
     "secure_config": {},
     "fields": {
+        "message": {
+            "en": {
+                "title": "message",
+                "description": "Error text"
+            },
+            "ru": {
+                "title": "message",
+                "description": "Текст ошибки"
+            }
+        },
         "object.fullpath": {
             "en": {
                 "title": "object.fullpath",
-                "description": "object.fullpath"
+                "description": "File path"
             },
             "ru": {
                 "title": "object.fullpath",
-                "description": "object.fullpath"
+                "description": "Путь до файла"
             }
         }
     },
@@ -35,10 +45,23 @@
             }
         }
     },
-    "events": {},
+    "events": {
+        "cyberok_sandbox_error": {
+            "en": {
+                "title": "Error",
+                "description": "An error occured in the module"
+            },
+            "ru": {
+                "title": "Ошибка",
+                "description": "В модуле произошла ошибка"
+            }
+        }
+    },
     "action_config": {
         "cyberok_sandbox_scan": {}
     },
-    "event_config": {},
+    "event_config": {
+        "cyberok_sandbox_error": {}
+    },
     "tags": {}
 }

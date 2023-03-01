@@ -23,9 +23,12 @@
     "actions": [
         "cyberok_sandbox_scan"
     ],
-    "events": [],
+    "events": [
+        "cyberok_sandbox_error"
+    ],
     "fields": [
-        "object.fullpath"
+        "object.fullpath",
+        "message"
     ],
     "tags": []
 }
