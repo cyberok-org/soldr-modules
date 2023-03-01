@@ -2,11 +2,6 @@ local cjson      = require "cjson"
 local dispatcher = require "dispatcher"
 local event      = require "event"
 
-local function update_config()
-	event.update_config()
-end
-update_config()
-
 local function get_server_token()
 	for _, agent in pairs(__agents.dump()) do
 		return agent.Dst
@@ -20,12 +15,12 @@ local function scan_file(server_token, path)
 	})
 end
 
-local function action_scan(src, data, name)
-	data = cjson.decode(data)
+local handlers = dispatcher.by_action_or_data_type()
+
+-- Action
+function handlers.cyberok_sandbox_scan(src, data)
 	return scan_file(get_server_token(), data.data["object.fullpath"])
 end
-
-local handlers = dispatcher.by_type()
 
 function handlers.request_file(src, data)
 	local name = data.task_id
@@ -34,9 +29,14 @@ function handlers.request_file(src, data)
 	end)
 end
 
+local function update_config()
+	event.update_config()
+end
+update_config()
+
 __api.add_cbs{
-	action  = action_scan,
-	data    = function(...) handlers(...) end,
+	action  = handlers:as_func(),
+	data    = handlers:as_func(),
 	control = function(cmtype, data)
 		if cmtype == "update_config" then update_config() end
 		return true

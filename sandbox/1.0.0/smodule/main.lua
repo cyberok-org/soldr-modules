@@ -25,7 +25,7 @@ local function receive_file(src, path, name)
 	return true
 end
 
-local handlers = dispatcher.by_type()
+local handlers = dispatcher.by_action_or_data_type()
 
 function handlers.scan_file(src, data)
 	local agent_token = get_agent_token(src)
@@ -50,7 +50,7 @@ end
 update_config()
 
 __api.add_cbs{
-	data    = function(...) return handlers(...) end,
+	data    = handlers:as_func(),
 	file    = receive_file,
 	control = function(cmtype, data)
 		if cmtype == "update_config" then update_config() end

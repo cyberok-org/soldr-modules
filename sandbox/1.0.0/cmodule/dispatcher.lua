@@ -6,17 +6,10 @@ function Dispatcher.new(select)
 	return setmetatable({_select = select}, Dispatcher)
 end
 
-function Dispatcher.by_action()
+function Dispatcher.by_action_or_data_type()
 	return Dispatcher.new(function(src, data, name)
 		data = cjson.decode(data)
-		return name, src, data, name
-	end)
-end
-
-function Dispatcher.by_type()
-	return Dispatcher.new(function(src, data, ...)
-		data = cjson.decode(data)
-		return data.type, src, data, ...
+		return name or data.type, src, data, name
 	end)
 end
 
@@ -29,6 +22,8 @@ function Dispatcher:dispatch(...)
 	__log.errorf("unsupported method: %s", method)
 end
 
-Dispatcher.__call = Dispatcher.dispatch
+function Dispatcher:as_func()
+	return function(...) return self:dispatch(...) end
+end
 
 return Dispatcher
