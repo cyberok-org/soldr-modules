@@ -16,8 +16,12 @@ function handlers.request_file(src, data)
 end
 
 __api.add_cbs{
-	data    = function(...) handlers(...) end,
-	control = function() return true end,
+	data = function(...) handlers(...) end,
+
+	control = function(cmtype, data)
+		if cmtype == "update_config" then update_config() end
+		return true
+	end,
 }
 __api.await(-1)
 return "success"
