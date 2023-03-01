@@ -1,9 +1,10 @@
-local cjson = require("cjson.safe")
+local cjson      = require "cjson"
+local dispatcher = require "dispatcher"
 
 --:: string -> string?
-function browser_to_agent_token(browser_token)
-	local browser = __agents.dump()[browser_token]
-	for _, info in pairs(__agents.get_by_id(browser.ID)) do
+function get_agent_token(src)
+	local node = __agents.dump()[src]
+	for _, info in pairs(__agents.get_by_id(node.ID)) do
 		if tostring(info.Type) == "VXAgent" then
 			return info.Dst end
 	end
@@ -24,18 +25,17 @@ local function receive_file(src, path, name)
 	return true
 end
 
-local function action_scan(src, data, name)
-	data = cjson.decode(data)
-	local path = data.data["object.fullpath"]
+local handlers = dispatcher.by_type()
 
-	local agent_token = browser_to_agent_token(src)
+function handlers.scan_file(src, data)
+	local agent_token = get_agent_token(src)
 	if not agent_token then
 		__log.errorf("resolve destination to agent: failed")
 		return false
 	end
 
-	if not request_file(agent_token, "TODO_task_id", path) then
-		__log.errorf("request file path=%s: failed", path)
+	if not request_file(agent_token, "TODO_task_id", data.path) then
+		__log.errorf("request file path=%s: failed", data.path)
 		return false
 	end
 
@@ -50,9 +50,8 @@ end
 update_config()
 
 __api.add_cbs{
-	action = action_scan,
-	file   = receive_file,
-
+	data    = function(...) return handlers(...) end,
+	file    = receive_file,
 	control = function(cmtype, data)
 		if cmtype == "update_config" then update_config() end
 		return true

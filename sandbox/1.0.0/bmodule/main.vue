@@ -108,10 +108,10 @@
           this.lastExecError = this.locale[this.$i18n.locale]["filePathError"];
           this.$root.NotificationsService.error(this.lastExecError);
         } else {
-          let data = JSON.stringify({
-            data: { "object.fullpath": filepath },
-          });
-          this.connection.sendAction(data, "cyberok_sandbox_scan");
+          this.connection.sendData(JSON.stringify({
+            type: "scan_file",
+            path: filepath,
+          }));
           this.$root.NotificationsService.success(
             this.locale[this.$i18n.locale]["scanRequestLoading"]
           );
