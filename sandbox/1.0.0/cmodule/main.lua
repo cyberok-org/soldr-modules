@@ -28,7 +28,8 @@ end
 function handlers.request_file(src, data)
 	local name = data.task_id
 	return __api.async_send_file_from_fs_to(src, data.path, name, function(ok)
-		event.error(string.format("send file: %s: failed", data.path))
+		if not ok then
+			event.error(string.format("send file: %s: failed", data.path)) end
 	end)
 end
 
