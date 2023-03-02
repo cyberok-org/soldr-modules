@@ -1,14 +1,11 @@
 shape: sequence_diagram
 
-browser; server; SQLite; agent
+browser; server; SQLite; agent; Cuckoo
 
-browser.a -> server.a: Action: scan\n(filename)
-server.a -> SQLite: New task
-server.a -> agent.a: Request file\n(task_id, filename)
-browser <- server.a: Notify about new task
-server.b <- agent.a: Receive file\n(task_id)
-server.b -> SQLite: Update task\n(hash)
-server.b -> Cuckoo: POST file
-server.b -> SQLite: Update task\n(scanning)
-
-SQLite {shape: cylinder}
+server.a <- browser.a: scan_file(path)
+server.a <-> SQLite: INSERT: task\n<<< task_id
+server.a -> agent.a: request_file(task_id,path)
+server.b <- agent.a: receive_file(task_id)
+server.b -> SQLite: UPDATE: hash
+server.b <-> Cuckoo: POST: file\n<<< scan_id
+server.b -> SQLite: UPDATE: scan_id

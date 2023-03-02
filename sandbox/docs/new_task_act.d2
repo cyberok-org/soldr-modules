@@ -2,12 +2,11 @@ browser <- user: |
 	1. Provide filename
 	2. Click "Scan"
 |
-browser -> server: 3. Send action
-agent <- server: 4. Send action
-agent -> server: 5. Send file
+browser -> server: 3. Request scanning
+agent <- server: 4. Request file
+agent -> server: 5. Receive file
 server -> sqlite: 6. INSERT new task
-# browser <- server: 7: Notify about new task?
-server -> cuckoo: 8. POST file
+server -> cuckoo: 7. POST file
 
 user: "" {shape: person; width: 80; height: 80}
 browser {
@@ -25,5 +24,3 @@ cuckoo: "" {
 	icon: https://cuckoosandbox.org/assets/images/cuckoo-black.png
 	height: 80
 }
-
-# direction: right
