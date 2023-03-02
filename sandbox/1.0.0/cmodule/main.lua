@@ -1,6 +1,6 @@
-local cjson      = require "cjson"
-local dispatcher = require "dispatcher"
-local event      = require "event"
+local cjson = require "cjson"
+local event = require "event"
+local mmap  = require "mmap"
 
 local function get_server_token()
 	for _, agent in pairs(__agents.dump()) do
@@ -15,9 +15,12 @@ local function scan_file(server_token, path)
 	})
 end
 
-local handlers = dispatcher.by_action_or_data_type()
+local handlers = mmap.new(function(src, data, name)
+	data = cjson.decode(data)
+	return name or data.type, src, data
+end)
 
--- Action
+-- Action: cyberok_sandbox_scan
 function handlers.cyberok_sandbox_scan(src, data)
 	return scan_file(get_server_token(), data.data["object.fullpath"])
 end
@@ -35,8 +38,8 @@ end
 update_config()
 
 __api.add_cbs{
-	action  = handlers:as_func(),
-	data    = handlers:as_func(),
+	action  = handlers:as_function(),
+	data    = handlers:as_function(),
 	control = function(cmtype, data)
 		if cmtype == "update_config" then update_config() end
 		return true

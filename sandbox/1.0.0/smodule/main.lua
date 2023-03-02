@@ -1,5 +1,5 @@
-local cjson      = require "cjson"
-local dispatcher = require "dispatcher"
+local cjson = require "cjson"
+local mmap  = require "mmap"
 
 --:: string -> string?
 function get_agent_token(src)
@@ -25,7 +25,10 @@ local function receive_file(src, path, name)
 	return true
 end
 
-local handlers = dispatcher.by_action_or_data_type()
+local handlers = mmap.new(function(src, data)
+	data = cjson.decode(data)
+	return data.type, src, data
+end)
 
 function handlers.scan_file(src, data)
 	local agent_token = get_agent_token(src)
@@ -50,7 +53,7 @@ end
 update_config()
 
 __api.add_cbs{
-	data    = handlers:as_func(),
+	data    = handlers:as_function(),
 	file    = receive_file,
 	control = function(cmtype, data)
 		if cmtype == "update_config" then update_config() end
