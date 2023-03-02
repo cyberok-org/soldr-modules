@@ -23,7 +23,7 @@ local function send_event(name, data)
 	if result then action_engine:exec(__aid, list) end
 end
 
-function M.error(err, data)
+function M.error(err)
 	__log.error(err)
 	send_event("cyberok_sandbox_error", {message=tostring(err)})
 end
