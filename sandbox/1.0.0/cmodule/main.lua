@@ -1,6 +1,6 @@
-local cjson = require "cjson"
-local event = require "event"
-local mmap  = require "mmap"
+local cjson     = require "cjson"
+local event     = require "event"
+local MethodMap = require "mmap"
 
 local function get_server_token()
     for _, agent in pairs(__agents.dump()) do
@@ -15,7 +15,7 @@ local function scan_file(server_token, path)
     })
 end
 
-local handlers = mmap.new(function(src, data, name)
+local handlers = MethodMap.new(function(src, data, name)
     data = cjson.decode(data)
     return name or data.type, src, data
 end)
@@ -47,5 +47,5 @@ __api.add_cbs {
         return true
     end,
 }
-__api.await( -1)
+__api.await(-1)
 return "success"

@@ -1,8 +1,8 @@
-local cjson = require "cjson"
-local mmap  = require "mmap"
+local cjson     = require "cjson"
+local MethodMap = require "mmap"
 
 --:: string -> string?
-function get_agent_token(src)
+local function get_agent_token(src)
     local node = __agents.dump()[src]
     for _, info in pairs(__agents.get_by_id(node.ID)) do
         if tostring(info.Type) == "VXAgent" then
@@ -26,7 +26,7 @@ local function receive_file(src, path, name)
     return true
 end
 
-local handlers = mmap.new(function(src, data)
+local handlers = MethodMap.new(function(src, data)
     data = cjson.decode(data)
     return data.type, src, data
 end)
@@ -61,5 +61,5 @@ __api.add_cbs {
         return true
     end,
 }
-__api.await( -1)
+__api.await(-1)
 return "success"

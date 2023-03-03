@@ -1,4 +1,4 @@
-local MethodMap = {};
+local MethodMap = {}
 MethodMap.__index = MethodMap
 
 -- Creates an instance of a mapping table. Cаlling it as a function
@@ -19,6 +19,7 @@ function MethodMap:__call(...)
     if method and self[method] then
         return self[method](table.unpack(args, 2))
     end
+    ---@diagnostic disable-next-line: redundant-parameter
     return self.default(...)
 end
 
