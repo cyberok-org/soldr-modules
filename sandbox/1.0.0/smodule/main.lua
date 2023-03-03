@@ -37,15 +37,10 @@ function handlers.scan_file(src, data)
         __log.errorf("resolve destination to agent: failed")
         return false
     end
-
     if not request_file(agent_token, "TODO_task_id", data.path) then
         __log.errorf("request file path=%s: failed", data.path)
         return false
     end
-
-    local res = __api.send_data_to(src, cjson.encode({
-        type = "connection_error",
-    }))
     return true
 end
 
