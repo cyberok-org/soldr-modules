@@ -10,7 +10,7 @@ function MethodMap.new(mapper)
     return setmetatable({ _map = mapper }, MethodMap)
 end
 
-function MethodMap.default()
+function MethodMap.default(...)
 end
 
 function MethodMap:__call(...)
@@ -19,7 +19,6 @@ function MethodMap:__call(...)
     if method and self[method] then
         return self[method](table.unpack(args, 2))
     end
-    ---@diagnostic disable-next-line: redundant-parameter
     return self.default(...)
 end
 
