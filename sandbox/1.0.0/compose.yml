@@ -1,0 +1,8 @@
+services:
+  httpbin:
+    image: mccutchen/go-httpbin:v2.5.6
+    environment:
+      - MAX_BODY_SIZE=100000000
+      - MAX_DURATION=60s
+    ports:
+      - "127.0.0.173:80:8080"
