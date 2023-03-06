@@ -1,5 +1,15 @@
 local cjson     = require "cjson"
+local courl     = require "courl"
+local go        = require "go"
 local MethodMap = require "mmap"
+local time      = require "time"
+
+local function check(...)
+    local ok, err = ...; if not ok then
+        -- TODO: send the error to an agent
+        __log.error(err)
+    end; return ...
+end
 
 --:: string -> string?
 local function get_agent_token(src)
@@ -56,5 +66,16 @@ __api.add_cbs {
         return true
     end,
 }
-__api.await(-1)
+
+repeat
+    local timeout = 0.100
+    local deadline = time.clock() + timeout
+
+    check(go:resume())
+    check(courl:resume(timeout))
+
+    local remains = deadline - time.clock()
+    __api.await(math.max(1, remains*1000))
+until __api.is_close() and courl:idle()
+
 return "success"
