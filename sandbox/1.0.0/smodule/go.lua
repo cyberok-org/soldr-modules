@@ -1,3 +1,5 @@
+local time = require "time"
+
 local Go = {}
 Go.__index = Go
 
@@ -38,6 +40,11 @@ function Go:wait()
         if coroutine.isyieldable() then coroutine.yield() end
     end
     return true
+end
+
+function Go.sleep(seconds)
+    local deadline = time.clock() + seconds
+    repeat coroutine.yield() until time.clock() >= deadline
 end
 
 -- Create and return default Go instance:
