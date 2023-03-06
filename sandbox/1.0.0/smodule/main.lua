@@ -3,6 +3,7 @@ local courl     = require "courl"
 local go        = require "go"
 local MethodMap = require "mmap"
 local time      = require "time"
+local try       = require "try"
 
 local function check(...)
     local ok, err = ...; if not ok then
@@ -19,6 +20,7 @@ local function get_agent_token(src)
             return info.Dst
         end
     end
+    return nil, "failed to resolve destination to agent"
 end
 
 --:: string, string, string -> ok?
@@ -42,16 +44,12 @@ local handlers = MethodMap.new(function(src, data)
 end)
 
 function handlers.scan_file(src, data)
-    local agent_token = get_agent_token(src)
-    if not agent_token then
-        __log.errorf("resolve destination to agent: failed")
-        return false
-    end
-    if not request_file(agent_token, "TODO_task_id", data.path) then
-        __log.errorf("request file path=%s: failed", data.path)
-        return false
-    end
-    return true
+    return check(try(function()
+        local agent_token = assert(get_agent_token(src))
+        assert(request_file(agent_token, "TODO_task_id", data.path),
+            string.format("request file %s: failed", data.path))
+        return true
+    end))
 end
 
 local function update_config()

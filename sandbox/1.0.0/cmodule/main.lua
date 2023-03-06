@@ -2,10 +2,18 @@ local cjson     = require "cjson"
 local event     = require "event"
 local MethodMap = require "mmap"
 
+local function check(...)
+    local ok, err = ...; if not ok then
+        __log.error(err)
+        event.error(err)
+    end; return ...
+end
+
 local function get_server_token()
     for _, agent in pairs(__agents.dump()) do
         return agent.Dst
     end
+    return nil, "failed to resolve destinaton to server"
 end
 
 local function scan_file(server_token, path)
@@ -22,15 +30,14 @@ end)
 
 -- Action: cyberok_sandbox_scan
 function handlers.cyberok_sandbox_scan(src, data)
-    return scan_file(get_server_token(), data.data["object.fullpath"])
+    local server_token = check(get_server_token())
+    return scan_file(server_token, data.data["object.fullpath"])
 end
 
 function handlers.request_file(src, data)
     local name = data.task_id
     return __api.async_send_file_from_fs_to(src, data.path, name, function(ok)
-        if not ok then
-            event.error(string.format("send file: %s: failed", data.path))
-        end
+        check(ok, string.format("send file %s: failed", data.path))
     end)
 end
 

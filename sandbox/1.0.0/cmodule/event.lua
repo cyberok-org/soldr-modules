@@ -10,8 +10,8 @@ function M.update_config()
     local event_config  = __config.get_current_event_config()
     local module_info   = __config.get_module_info()
 
-    event_engine        = CEventEngine(fields_schema, event_config, module_info, prefix_db, false)
-    action_engine       = CActionEngine({}, false)
+    event_engine  = CEventEngine(fields_schema, event_config, module_info, prefix_db, false)
+    action_engine = CActionEngine({}, false)
 end
 
 M.update_config()
@@ -25,7 +25,6 @@ local function send_event(name, data)
 end
 
 function M.error(err)
-    __log.error(err)
     send_event("cyberok_sandbox_error", { message = tostring(err) })
 end
 
