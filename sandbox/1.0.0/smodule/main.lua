@@ -70,7 +70,7 @@ repeat
     local deadline = time.clock() + timeout
 
     check(go:resume())
-    check(courl:resume(timeout))
+    check(courl:wait(timeout))
 
     local remains = deadline - time.clock()
     __api.await(math.max(1, remains*1000))
