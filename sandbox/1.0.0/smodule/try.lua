@@ -1,7 +1,7 @@
 -- Strips "FILE:LINE:" prefix from an error message.
 --:: string -> string
 local function strip_place(err)
-	return string.gsub(err, "^.-:.-: ", "")
+	return string.gsub(tostring(err), "^.-:.-: ", "")
 end
 
 -- Customized protected call around assert/error.
