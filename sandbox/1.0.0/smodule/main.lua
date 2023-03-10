@@ -4,9 +4,9 @@ local go        = require "go"
 local MethodMap = require "mmap"
 local time      = require "time"
 local try       = require "try"
-local cuckoo    = require "cuckoo"
+local Cuckoo    = require "cuckoo"
 
-local API = {}
+local cuckoo
 
 local function check(...)
     local ok, err = ...; if not ok then
@@ -39,7 +39,7 @@ end
 --:: string,string,string -> ok?
 local function receive_file(src, path, name)
     go(function()
-        local task_id = check(API:create_task(path))
+        local task_id = check(cuckoo:create_task(path))
     end)
     return true
 end
@@ -60,7 +60,7 @@ end
 
 local function update_config()
     -- todo: stop current connections
-    API = cuckoo:new(
+    cuckoo = Cuckoo:new(
         "http://192.168.220.236:8090",
         "AWFKI9LcPk_Y5i0pcA6XKA"
     )

@@ -7,13 +7,13 @@ local ffi    = require "ffi"
 ---@class Cuckoo
 ---@field base_url string
 ---@field api_key string
-local cuckoo = {}
+local Cuckoo = {}
 
 ---Creates new Cuckoo API instance
 ---@param base_url string
 ---@param api_key string
 ---@return any
-function cuckoo:new(base_url, api_key)
+function Cuckoo:new(base_url, api_key)
     local o = {
         base_url = base_url,
         api_key = api_key,
@@ -32,9 +32,9 @@ end
 
 ---Creates a task to analyze a file named `filename` in Cuckoo
 ---@param filename string
----@return number|boolean? # Cuckoo's task id
+---@return integer|boolean|nil # Cuckoo's task id
 ---@return string? # Error message if any
-function cuckoo:create_task(filename)
+function Cuckoo:create_task(filename)
     assert(type(filename) == "string", "filename must be string")
     return with_curl(function(h)
         h:set("HTTPHEADER", { "Authorization: Bearer " .. self.api_key })
@@ -50,15 +50,12 @@ function cuckoo:create_task(filename)
             return size
         end)
         assert(courl:perform(h))
-        assert(type(body) == "string")
-        print(body)
-        assert(string.len(body) ~= 0)
 
         local code = h:info("RESPONSE_CODE")
-        assert(code == 200, string.format("server respond with %d code", code))
+        assert(code == 200, string.format("got unexpected response code %d", code))
         local task = assert(json.decode(body))
         return task.task_id
     end)
 end
 
-return cuckoo
+return Cuckoo
