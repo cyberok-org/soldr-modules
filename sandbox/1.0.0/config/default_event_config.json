@@ -1,5 +1,5 @@
 {
-    "cyberok_malware_object_file_found": {
+    "cyberok_sandbox_verdict_malware": {
         "actions": [
             {
                 "fields": [],

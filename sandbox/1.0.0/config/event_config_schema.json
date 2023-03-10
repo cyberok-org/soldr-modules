@@ -1,7 +1,7 @@
 {
     "additionalProperties": false,
     "properties": {
-        "cyberok_malware_object_file_found": {
+        "cyberok_sandbox_verdict_malware": {
             "allOf": [
                 {
                     "$ref": "#/definitions/events.atomic"
@@ -62,7 +62,7 @@
     },
     "required": [
         "cyberok_sandbox_error",
-        "cyberok_malware_object_file_found"
+        "cyberok_sandbox_verdict_malware"
     ],
     "type": "object"
 }
