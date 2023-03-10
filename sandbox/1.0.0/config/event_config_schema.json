@@ -1,6 +1,35 @@
 {
     "additionalProperties": false,
     "properties": {
+        "cyberok_malware_object_file_found": {
+            "allOf": [
+                {
+                    "$ref": "#/definitions/events.atomic"
+                },
+                {
+                    "properties": {
+                        "fields": {
+                            "default": [
+                                "object.fullpath"
+                            ],
+                            "items": {
+                                "enum": [
+                                    "object.fullpath"
+                                ],
+                                "type": "string"
+                            },
+                            "maxItems": 1,
+                            "minItems": 1,
+                            "type": "array"
+                        }
+                    },
+                    "required": [
+                        "fields"
+                    ],
+                    "type": "object"
+                }
+            ]
+        },
         "cyberok_sandbox_error": {
             "allOf": [
                 {
@@ -32,7 +61,8 @@
         }
     },
     "required": [
-        "cyberok_sandbox_error"
+        "cyberok_sandbox_error",
+        "cyberok_malware_object_file_found"
     ],
     "type": "object"
 }

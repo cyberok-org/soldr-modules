@@ -1,4 +1,18 @@
 {
+    "cyberok_malware_object_file_found": {
+        "actions": [
+            {
+                "fields": [],
+                "module_name": "this",
+                "name": "log_to_db",
+                "priority": 10
+            }
+        ],
+        "fields": [
+            "object.fullpath"
+        ],
+        "type": "atomic"
+    },
     "cyberok_sandbox_error": {
         "actions": [
             {

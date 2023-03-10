@@ -24,7 +24,8 @@
         "cyberok_sandbox_scan"
     ],
     "events": [
-        "cyberok_sandbox_error"
+        "cyberok_sandbox_error",
+        "cyberok_malware_object_file_found"
     ],
     "fields": [
         "object.fullpath",
