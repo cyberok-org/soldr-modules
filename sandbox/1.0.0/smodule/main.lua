@@ -4,6 +4,9 @@ local go        = require "go"
 local MethodMap = require "mmap"
 local time      = require "time"
 local try       = require "try"
+local cuckoo    = require "cuckoo"
+
+local API = {}
 
 local function check(...)
     local ok, err = ...; if not ok then
@@ -11,6 +14,7 @@ local function check(...)
         __log.error(err)
     end; return ...
 end
+
 
 --:: string -> string?
 local function get_agent_token(src)
@@ -32,9 +36,11 @@ local function request_file(agent_token, task_id, path)
     })
 end
 
+--:: string,string,string -> ok?
 local function receive_file(src, path, name)
-    local task_id = name
-    -- TODO: handle the received file
+    go(function()
+        local task_id = check(API:create_task(path))
+    end)
     return true
 end
 
@@ -53,6 +59,11 @@ function handlers.scan_file(src, data)
 end
 
 local function update_config()
+    -- todo: stop current connections
+    API = cuckoo:new(
+        "http://192.168.220.236:8090",
+        "AWFKI9LcPk_Y5i0pcA6XKA"
+    )
 end
 update_config()
 
