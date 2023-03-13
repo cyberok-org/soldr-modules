@@ -16,7 +16,7 @@
               slot="append"
               icon="el-icon-s-promotion"
               class="uk-flex-none"
-              @click="submitReqToExecAction"
+              @click="scanFile"
               >{{ locale[$i18n.locale]["buttonExecAction"] }}
             </el-button>
           </el-input>
@@ -66,23 +66,24 @@
       },
     }),
     created() {
-      if (this.viewMode === "agent") {
-        this.protoAPI.connect().then(
-          (connection) => {
-            const date = new Date().toLocaleTimeString();
-            this.connection = connection;
-            this.connection.subscribe(this.onData, "data");
-            this.$root.NotificationsService.success(
-              `${date} ${this.locale[this.$i18n.locale]["connected"]}`
-            );
-          },
-          (_error) => {
-            this.lastSqlError =
-              this.locale[this.$i18n.locale]["connServerError"];
-            this.$root.NotificationsService.error(this.lastSqlError);
-          }
-        );
+      if (this.viewMode != "agent") {
+        return;
       }
+      this.protoAPI.connect().then(
+        (connection) => {
+          const date = new Date().toLocaleTimeString();
+          this.connection = connection;
+          this.connection.subscribe(this.onData, "data");
+          this.$root.NotificationsService.success(
+            `${date} ${this.locale[this.$i18n.locale]["connected"]}`
+          );
+        },
+        (_error) => {
+          this.$root.NotificationsService.error(
+            this.locale[this.$i18n.locale]["connServerError"]
+          );
+        }
+      );
     },
     mounted() {
       this.leftTab = this.viewMode === "agent" ? "api" : undefined;
@@ -101,21 +102,20 @@
           );
         }
       },
-      submitReqToExecAction() {
-        this.lastExecError = "";
+      scanFile() {
         let filepath = this.filepath.trim();
-        if (filepath === "" || filepath.length > 256) {
+        if (filepath === "") {
           this.lastExecError = this.locale[this.$i18n.locale]["filePathError"];
           this.$root.NotificationsService.error(this.lastExecError);
-        } else {
-          this.connection.sendData(JSON.stringify({
-            type: "scan_file",
-            path: filepath,
-          }));
-          this.$root.NotificationsService.success(
-            this.locale[this.$i18n.locale]["scanRequestLoading"]
-          );
+          return;
         }
+        this.connection.sendData(
+          JSON.stringify({ type: "scan_file", path: filepath })
+        );
+        this.$root.NotificationsService.success(
+          this.locale[this.$i18n.locale]["scanRequestLoading"]
+        );
+        this.lastExecError = "";
       },
     },
   };
