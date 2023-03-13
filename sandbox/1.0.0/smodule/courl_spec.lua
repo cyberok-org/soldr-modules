@@ -10,9 +10,9 @@ local API = "https://httpbingo.org"
 
 local function with_handle(func)
     local h = curl.easy()
-    local result = {try(func, h)}
+    local result = table.pack(try(func, h))
     h:close()
-    return unpack(result)
+    return table.unpack(result)
 end
 
 local function request(url, setup)

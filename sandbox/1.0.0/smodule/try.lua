@@ -8,10 +8,10 @@ end
 -- In contrast to pcall/xpcall returns unchanged list of the result arguments
 -- of `func` on success.
 local function try(func, ...)
-	local args = {xpcall(func, strip_place, ...)}
+	local args = table.pack(xpcall(func, strip_place, ...))
 	if args[1] == true then
-		return unpack(args, 2) end
-	return unpack(args)
+		return table.unpack(args, 2) end
+	return table.unpack(args)
 end
 
 return try

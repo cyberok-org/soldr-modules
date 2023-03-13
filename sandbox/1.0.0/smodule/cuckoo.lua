@@ -25,9 +25,9 @@ end
 
 local function with_curl(func)
     local h = curl.easy()
-    local result = { try(func, h) }
+    local result = table.pack(try(func, h))
     h:close()
-    return unpack(result)
+    return table.unpack(result)
 end
 
 ---Creates a task to analyze a file named `filename` in Cuckoo
