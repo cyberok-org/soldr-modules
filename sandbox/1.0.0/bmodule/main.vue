@@ -16,13 +16,12 @@
               slot="append"
               icon="el-icon-s-promotion"
               class="uk-flex-none"
+              :disabled="filepath.trim().length == 0"
               @click="scanFile"
-              >{{ locale[$i18n.locale]["buttonExecAction"] }}
+            >
+              {{ locale[$i18n.locale]["buttonScan"] }}
             </el-button>
           </el-input>
-          <div id="error" v-if="lastExecError" class="invalid-feedback">
-            {{ lastExecError }}
-          </div>
         </div>
       </el-tab-pane>
     </el-tabs>
@@ -39,26 +38,23 @@
       leftTab: undefined,
       filepath: "",
       connection: undefined,
-      lastExecError: "",
       locale: {
         ru: {
           api: "Проверка файлов",
-          buttonExecAction: "Проверить файл",
+          buttonScan: "Проверить файл",
           connected: "— подключение к серверу установлено",
           connServerError: "Не удалось подключиться к серверу",
           connAgentError: "Не удалось подключиться к агенту",
-          filePathError: "Путь к файлу задан некорректно",
           filePl: "Путь к файлу",
           scanRequestLoading: "Запрос был отправлен",
           unknownMessageError: "Получен неизвестный тип сообщения",
         },
         en: {
           api: "File scan",
-          buttonExecAction: "Scan",
+          buttonScan: "Scan",
           connected: "— connection to the server established",
           connServerError: "Failed to connect to the server",
           connAgentError: "Failed to connect to the agent",
-          filePathError: "Invalid file path",
           filePl: "File path",
           scanRequestLoading: "Request has been sent",
           unknownMessageError: "Received unknown message type",
@@ -103,19 +99,12 @@
         }
       },
       scanFile() {
-        let filepath = this.filepath.trim();
-        if (filepath === "") {
-          this.lastExecError = this.locale[this.$i18n.locale]["filePathError"];
-          this.$root.NotificationsService.error(this.lastExecError);
-          return;
-        }
         this.connection.sendData(
-          JSON.stringify({ type: "scan_file", path: filepath })
+          JSON.stringify({ type: "scan_file", path: this.filepath.trim() })
         );
         this.$root.NotificationsService.success(
           this.locale[this.$i18n.locale]["scanRequestLoading"]
         );
-        this.lastExecError = "";
       },
     },
   };
