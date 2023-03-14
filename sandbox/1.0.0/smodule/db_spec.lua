@@ -122,4 +122,19 @@ describe("DB", function()
             assert(db:scan_set_processing("MISSING", "TaskID"))
         end)
     end)
+
+    test("select", function()
+        assert(query(db_, [[
+            INSERT INTO scan (scan_id, agent_id, path) VALUES
+                (10, 'Agent10', 'Path10'),
+                (20, 'Agent20', 'Path20');
+        ]]))
+        local rows = assert(db:select[[
+            SELECT 10 * scan_id, agent_id || ':' || path AS Foo FROM scan;
+        ]])
+        assert.same(3, #rows)
+        assert.same({"10 * scan_id", "Foo"}, rows[1])
+        assert.same({100, "Agent10:Path10"}, rows[2])
+        assert.same({200, "Agent20:Path20"}, rows[3])
+    end)
 end)

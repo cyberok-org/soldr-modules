@@ -6,12 +6,12 @@ CREATE TABLE IF NOT EXISTS scan (
     scan_id  INTEGER PRIMARY KEY,
     agent_id TEXT    NOT NULL,
     path     TEXT    NOT NULL,
-    status   TEXT    NOT NULL, -- enum: new, processing
+    status   TEXT    NOT NULL DEFAULT 'new', -- enum: new, processing
 
     cuckoo_task_id TEXT,
 
-    created_at TEXT NOT NULL, -- datetime: YYYY-MM-DD HH:MM:SS
-    updated_at TEXT NOT NULL  -- datetime: YYYY-MM-DD HH:MM:SS
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, -- datetime: YYYY-MM-DD HH:MM:SS
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP  -- datetime: YYYY-MM-DD HH:MM:SS
 );
 ]]
 
@@ -106,6 +106,29 @@ function DB:scan_set_processing(scan_id, cuckoo_task_id, now)
         stmt[1], stmt[2], stmt[3] = tonumber(scan_id), cuckoo_task_id, DB.datetime(now)
         stmt()
         return true
+    end)
+end
+
+-- Executes the given SQL-query on the database.
+-- Returns result rows as the table:
+-- {
+--   {column_1, column_2, ..., column_N }, -- column names
+--   {value_1,  value_2,  ..., value_N  }, -- row_1
+--   ...
+--   {value_1,  value_2,  ..., value_N  }, -- row_M
+-- }
+--:: string -> {...}, error?
+function DB:select(sql)
+    return with_prepare(self._db, sql, function(stmt)
+        local columns = {}
+        for c = 1,stmt:columns() do
+            table.insert(columns, stmt:get_name(c-1))
+        end
+        local rows = { columns }
+        for row in stmt:rows() do
+            table.insert(rows, row)
+        end
+        return rows
     end)
 end
 
