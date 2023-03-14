@@ -1,7 +1,7 @@
 local sqlite3 = require "lsqlite3"
 local try     = require "try"
 
-local MODEL_SQL = [[
+local MIGRATE_SQL = [[
 CREATE TABLE IF NOT EXISTS scan (
     scan_id  INTEGER PRIMARY KEY,
     agent_id TEXT    NOT NULL,
@@ -10,15 +10,15 @@ CREATE TABLE IF NOT EXISTS scan (
 
     cuckoo_task_id TEXT,
 
-    created_at INTEGER NOT NULL, -- Unix time, seconds
-    updated_at INTEGER NOT NULL  -- Unix time, seconds
+    created_at TEXT NOT NULL, -- datetime: YYYY-MM-DD HH:MM:SS
+    updated_at TEXT NOT NULL  -- datetime: YYYY-MM-DD HH:MM:SS
 );
 ]]
 
 --:: sqlite3.Db -> true?, error?
 local function migrate(db)
     local ok, err = try(function()
-        db:exec(MODEL_SQL)
+        db:exec(MIGRATE_SQL)
         return true
     end)
     return ok, string.format("failed to apply migration: %s", err)
@@ -53,6 +53,12 @@ function DB:close()
     end)
 end
 
+-- Converts unix time (seconds) to SQLite's datetime format: YYYY-MM-DD HH:MM:SS.
+--:: integer? -> string
+function DB.datetime(now)
+    return os.date("!%F %T", now)
+end
+
 --:: ScanRow :: {scan_id, agent_id, path, status, ...}
 --:: string -> ScanRow?, error?
 function DB:scan_get(scan_id)
@@ -77,7 +83,7 @@ function DB:scan_new(agent_id, path, now)
         INSERT INTO scan (status, agent_id, path, created_at, updated_at)
         VALUES ('new', ?1, ?2, ?3, ?3);
     ]], function(stmt)
-        stmt[1], stmt[2], stmt[3] = agent_id, path, now or os.time()
+        stmt[1], stmt[2], stmt[3] = agent_id, path, DB.datetime(now)
         stmt()
         return tostring(self._db:last_insert_rowid())
     end)
@@ -89,7 +95,7 @@ function DB:scan_set_processing(scan_id, cuckoo_task_id, now)
         UPDATE scan SET status='processing', cuckoo_task_id=?2, updated_at=?3
          WHERE scan_id=?1
     ]], function(stmt)
-        stmt[1], stmt[2], stmt[3] = tonumber(scan_id), cuckoo_task_id, now or os.time()
+        stmt[1], stmt[2], stmt[3] = tonumber(scan_id), cuckoo_task_id, DB.datetime(now)
         stmt()
         return true
     end)
