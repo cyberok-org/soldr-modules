@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS scan (
 );
 ]]
 
---:: sqlite3.Db -> boolean, error?
+--:: sqlite3.Db -> true?, error?
 local function migrate(db)
     local ok, err = try(function()
         db:exec(MODEL_SQL)
@@ -42,6 +42,14 @@ function DB.open(filename)
         local db = assert(sqlite3.open(filename))
         assert(migrate(db))
         return setmetatable({_db = db}, DB)
+    end)
+end
+
+--:: () -> true?, error?
+function DB:close()
+    return try(function()
+        self._db:close()
+        return true
     end)
 end
 

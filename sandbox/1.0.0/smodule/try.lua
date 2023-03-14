@@ -11,7 +11,7 @@ local function try(func, ...)
 	local args = table.pack(xpcall(func, strip_place, ...))
 	if args[1] == true then
 		return table.unpack(args, 2) end
-	return table.unpack(args)
+	return nil, table.unpack(args, 2)
 end
 
 return try

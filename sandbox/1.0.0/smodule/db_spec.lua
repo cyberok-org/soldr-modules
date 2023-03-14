@@ -24,11 +24,12 @@ describe("DB", function()
     local db, db_filename, db_
     setup(function()
         db_filename = os.tmpname()
-        -- db_filename = "/tmp/sandbox.db"
         db = assert(DB.open(db_filename))
         db_ = assert(sqlite3.open(db_filename))
     end)
     teardown(function()
+        db_:close()
+        assert(db:close())
         assert(os.remove(db_filename))
     end)
     before_each(function()
