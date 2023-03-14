@@ -38,6 +38,7 @@ end
 
 describe("CoURL #network", function()
     test("GET", function()
+        local code, body
         go(function()
             code, body = assert(request(API.."/base64/encode/TEST")) end)
         wait()
@@ -46,6 +47,7 @@ describe("CoURL #network", function()
     end)
 
     test("unsuccessful status code", function()
+        local code
         go(function()
             code = assert(request(API.."/status/500")) end)
         wait()
@@ -53,6 +55,7 @@ describe("CoURL #network", function()
     end)
 
     test("bad curl easy options", function()
+        local ok, err
         go(function()
             ok, err = request("unknown://domain") end)
         wait()
@@ -61,6 +64,7 @@ describe("CoURL #network", function()
     end)
 
     test("connection error", function()
+        local ok, err
         go(function()
             ok, err = request("http://0.0.0.0") end)
         wait()
@@ -69,6 +73,7 @@ describe("CoURL #network", function()
     end)
 
     test("POST multipart/form-data", function()
+        local code, body
         go(function()
             code, body = assert(request(API.."/post", function(h)
                 local mime = h:mime()
@@ -79,7 +84,7 @@ describe("CoURL #network", function()
             end))
         end)
         wait()
-        assert(200, code)
+        assert.equal(200, code)
         assert.equal("STRING", cjson.decode(body).form.String[1])
     end)
 end)
