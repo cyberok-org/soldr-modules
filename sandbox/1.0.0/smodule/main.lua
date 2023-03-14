@@ -58,6 +58,17 @@ function handlers.scan_file(src, data)
     end))
 end
 
+function handlers.request_data(src, data)
+    local rows = {
+        { "scan_id", "agent_id", "path",          "status", "cuckoo_task_id" },
+        { 1,         src,        "/usr/bin/bash", "new",    123123123,       },
+    }
+    return __api.send_data_to(src, cjson.encode {
+        type = "display_data",
+        data = rows,
+    })
+end
+
 local function update_config()
     -- todo: stop current connections
     cuckoo = Cuckoo:new(

@@ -46,6 +46,7 @@
     data: () => ({
       leftTab: undefined,
       filepath: "",
+      query: "SELECT * FROM scan",
       results: [["Task ID", "Filename", "Status"]],
       connection: undefined,
       locale: {
@@ -80,6 +81,7 @@
           const date = new Date().toLocaleTimeString();
           this.connection = connection;
           this.connection.subscribe(this.onData, "data");
+          this.requestData();
           this.$root.NotificationsService.success(
             `${date} ${this.locale[this.$i18n.locale]["connected"]}`
           );
@@ -107,17 +109,24 @@
     },
     methods: {
       onData(packet) {
-        let data = new TextDecoder("utf-8").decode(packet.content.data);
-        let msg = JSON.parse(data);
-        if ((msg.type = "connection_error")) {
+        const data = new TextDecoder("utf-8").decode(packet.content.data);
+        const msg = JSON.parse(data);
+        if (msg.type == "connection_error") {
           this.$root.NotificationsService.error(
             this.locale[this.$i18n.locale]["connAgentError"]
           );
+        } else if (msg.type == "display_data") {
+          this.results = msg.data;
         } else {
           this.$root.NotificationsService.error(
             this.locale[this.$i18n.locale]["unknownMessageError"]
           );
         }
+      },
+      requestData() {
+        this.connection.sendData(
+          JSON.stringify({ type: "request_data", query: this.query })
+        );
       },
       scanFile() {
         this.connection.sendData(
