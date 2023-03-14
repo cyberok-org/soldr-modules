@@ -23,6 +23,15 @@
             </el-button>
           </el-input>
         </div>
+        <el-table border table-layout="auto" :data="tableData">
+          <el-table-column
+            v-for="(col, i) in tableColumns"
+            :key="i"
+            :prop="col.name"
+            :label="col.name"
+            sortable
+          />
+        </el-table>
       </el-tab-pane>
     </el-tabs>
   </div>
@@ -37,6 +46,7 @@
     data: () => ({
       leftTab: undefined,
       filepath: "",
+      results: [["Task ID", "Filename", "Status"]],
       connection: undefined,
       locale: {
         ru: {
@@ -83,6 +93,17 @@
     },
     mounted() {
       this.leftTab = this.viewMode === "agent" ? "api" : undefined;
+    },
+    computed: {
+      tableData() {
+        const headers = this.results[0];
+        return this.results
+          .slice(1)
+          .map((r) => r.reduce((o, v, i) => ({ ...o, [headers[i]]: v }), {}));
+      },
+      tableColumns() {
+        return this.results[0].map((c) => ({ name: c }));
+      },
     },
     methods: {
       onData(packet) {
