@@ -32,7 +32,7 @@ end
 
 ---Creates a task to analyze a file named `filename` in Cuckoo
 ---@param filename string
----@return integer|boolean|nil # Cuckoo's task id
+---@return integer? # Cuckoo's task id
 ---@return string? # Error message if any
 function Cuckoo:create_task(filename)
     assert(type(filename) == "string", "filename must be string")
