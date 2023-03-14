@@ -15,21 +15,20 @@ local function check(...)
     end; return ...
 end
 
-
---:: string -> string?
-local function get_agent_token(src)
-    local node = __agents.dump()[src]
-    for _, info in pairs(__agents.get_by_id(node.ID)) do
-        if tostring(info.Type) == "VXAgent" then
-            return info.Dst
+--:: string, string? -> AgentInfo?, error?
+local function get_agent_by_src(src, type)
+    local id = __agents.dump()[src].ID
+    for _, agent in pairs(__agents.get_by_id(id)) do
+        if tostring(agent.Type) == (type or "VXAgent") then
+            return agent
         end
     end
-    return nil, "failed to resolve destination to agent"
+    return nil, "agent not found"
 end
 
 --:: string, string, string -> ok?
-local function request_file(agent_token, task_id, path)
-    return __api.send_data_to(agent_token, cjson.encode {
+local function request_file(dst, task_id, path)
+    return __api.send_data_to(dst, cjson.encode{
         type    = "request_file",
         task_id = task_id,
         path    = path,
@@ -51,8 +50,8 @@ end)
 
 function handlers.scan_file(src, data)
     return check(try(function()
-        local agent_token = assert(get_agent_token(src))
-        assert(request_file(agent_token, "TODO_task_id", data.path),
+        local agent = assert(get_agent_by_src(src))
+        assert(request_file(agent.Dst, "TODO_task_id", data.path),
             string.format("request file %s: failed", data.path))
         return true
     end))

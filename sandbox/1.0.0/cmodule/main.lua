@@ -9,18 +9,12 @@ local function check(...)
     end; return ...
 end
 
-local function get_server_token()
+--:: () -> string?, error?
+local function get_server_dst()
     for _, agent in pairs(__agents.dump()) do
         return agent.Dst
     end
     return nil, "failed to resolve destinaton to server"
-end
-
-local function scan_file(server_token, path)
-    return __api.send_data_to(server_token, cjson.encode {
-        type = "scan_file",
-        path = path,
-    })
 end
 
 local handlers = MethodMap.new(function(src, data, name)
@@ -30,8 +24,11 @@ end)
 
 -- Action: cyberok_sandbox_scan
 function handlers.cyberok_sandbox_scan(src, data)
-    local server_token = check(get_server_token())
-    return scan_file(server_token, data.data["object.fullpath"])
+    local dst = check(get_server_dst())
+    return __api.send_data_to(dst, cjson.encode{
+        type = "scan_file",
+        path = data.data["object.fullpath"],
+    })
 end
 
 function handlers.request_file(src, data)
