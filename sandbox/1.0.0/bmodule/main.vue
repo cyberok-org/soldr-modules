@@ -135,7 +135,7 @@
           this.$root.NotificationsService.error(
             this.locale[this.$i18n.locale]["connAgentError"]
           );
-        } else if (msg.type == "display_data") {
+        } else if (msg.type == "show_sql_rows") {
           this.results = msg.data;
         } else {
           this.$root.NotificationsService.error(
@@ -145,7 +145,7 @@
       },
       execSQL() {
         this.connection.sendData(
-          JSON.stringify({ type: "request_data", query: this.sqlQuery })
+          JSON.stringify({ type: "exec_sql", query: this.sqlQuery })
         );
       },
       scanFile() {

@@ -87,11 +87,11 @@ local function receive_file(src, path, name)
     return true
 end
 
-function handlers.request_data(src, data)
+function handlers.exec_sql(src, data)
     return check(try(function()
         local rows = assert(db:select(data.query))
         assert(__api.send_data_to(src, cjson.encode{
-            type = "display_data",
+            type = "show_sql_rows",
             data = rows,
         }), "TODO_error")
         return true
