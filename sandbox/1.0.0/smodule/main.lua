@@ -88,14 +88,14 @@ local function receive_file(src, path, name)
 end
 
 function handlers.request_data(src, data)
-    local rows = {
-        { "scan_id", "agent_id", "path",          "status", "cuckoo_task_id" },
-        { 1,         src,        "/usr/bin/bash", "new",    123123123,       },
-    }
-    return __api.send_data_to(src, cjson.encode {
-        type = "display_data",
-        data = rows,
-    })
+    return check(try(function()
+        local rows = assert(db:select(data.query))
+        assert(__api.send_data_to(src, cjson.encode{
+            type = "display_data",
+            data = rows,
+        }), "TODO_error")
+        return true
+    end))
 end
 
 __api.add_cbs {
