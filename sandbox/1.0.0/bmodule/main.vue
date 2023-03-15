@@ -9,20 +9,34 @@
       >
         <div class="uk-margin limit-length">
           <el-input
-            :placeholder="locale[$i18n.locale]['filePl']"
+            :placeholder="locale[$i18n.locale]['filePlaceholder']"
             v-model="filename"
           >
             <el-button
               slot="append"
               icon="el-icon-s-promotion"
               class="uk-flex-none"
-              :disabled="filename.trim().length == 0"
+              :disabled="filename.trim().length == 0 || !connection"
               @click="scanFile"
             >
               {{ locale[$i18n.locale]["buttonScan"] }}
             </el-button>
           </el-input>
         </div>
+        <div>
+          <el-input
+            type="textarea"
+            :autosize="{ minRows: 3, maxRows: 8 }"
+            :placeholder="locale[$i18n.locale]['queryPlaceholder']"
+            v-model="sqlQuery"
+            @keyup.ctrl.enter.native="execSQL"
+          />
+        </div>
+        <p class="uk-margin buttons">
+          <el-button type="primary" @click="execSQL" :disabled="!connection">
+            {{ locale[$i18n.locale]["buttonExecSQL"] }}
+          </el-button>
+        </p>
         <el-table border table-layout="auto" :data="tableData">
           <el-table-column
             v-for="(col, i) in tableColumns"
@@ -46,27 +60,31 @@
     data: () => ({
       leftTab: undefined,
       filename: "",
-      query: "SELECT * FROM scan",
-      results: [["Task ID", "Filename", "Status"]],
+      sqlQuery: "SELECT * FROM scan",
+      results: undefined,
       connection: undefined,
       locale: {
         ru: {
           api: "Проверка файлов",
+          buttonExecSQL: "Выполнить запрос",
           buttonScan: "Проверить файл",
           connected: "— подключение к серверу установлено",
           connServerError: "Не удалось подключиться к серверу",
           connAgentError: "Не удалось подключиться к агенту",
-          filePl: "Путь к файлу",
+          filePlaceholder: "Путь к файлу",
+          queryPlaceholder: "SQL-запрос для выборки",
           scanRequestLoading: "Запрос был отправлен",
           unknownMessageError: "Получен неизвестный тип сообщения",
         },
         en: {
           api: "File scan",
+          buttonExecSQL: "Execute query",
           buttonScan: "Scan",
           connected: "— connection to the server established",
           connServerError: "Failed to connect to the server",
           connAgentError: "Failed to connect to the agent",
-          filePl: "File path",
+          filePlaceholder: "File path",
+          queryPlaceholder: "SQL query for selection",
           scanRequestLoading: "Request has been sent",
           unknownMessageError: "Received unknown message type",
         },
@@ -81,7 +99,7 @@
           const date = new Date().toLocaleTimeString();
           this.connection = connection;
           this.connection.subscribe(this.onData, "data");
-          this.requestData();
+          this.execSQL();
           this.$root.NotificationsService.success(
             `${date} ${this.locale[this.$i18n.locale]["connected"]}`
           );
@@ -98,12 +116,14 @@
     },
     computed: {
       tableData() {
+        if (!this.results || this.results.length < 2) return [];
         const headers = this.results[0];
         return this.results
           .slice(1)
           .map((r) => r.reduce((o, v, i) => ({ ...o, [headers[i]]: v }), {}));
       },
       tableColumns() {
+        if (!this.results || this.results.length < 1) return [];
         return this.results[0].map((c) => ({ name: c }));
       },
     },
@@ -123,9 +143,9 @@
           );
         }
       },
-      requestData() {
+      execSQL() {
         this.connection.sendData(
-          JSON.stringify({ type: "request_data", query: this.query })
+          JSON.stringify({ type: "request_data", query: this.sqlQuery })
         );
       },
       scanFile() {
