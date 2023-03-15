@@ -14,7 +14,7 @@ local function check(...)
     end; return ...
 end
 
-local db, err = check(DB.open(__gid..".cyberok_sandbox.db"))
+local db, err = check(DB.open("data/"..__pid..".cyberok_sandbox.db"))
 if err then
     __api.await(-1)
     return "success"
