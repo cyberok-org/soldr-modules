@@ -53,15 +53,15 @@ describe("DB", function()
     describe("scan_get", function()
         it("should return info about the requested scanning task", function()
             assert(query(db_, [[
-            INSERT INTO scan (scan_id, agent_id, path, status, cuckoo_task_id, created_at, updated_at)
+            INSERT INTO scan (scan_id, agent_id, filename, status, cuckoo_task_id, created_at, updated_at)
             VALUES
-                (10, 'Agent10', 'Path10', 'new',        'Task10', "CreatedAt10", "UpdatedAt10"),
-                (20, 'Agent20', 'Path20', 'processing', 'Task20', "CreatedAt20", "UpdatedAt20");
+                (10, 'Agent10', 'File10', 'new',        'Task10', "CreatedAt10", "UpdatedAt10"),
+                (20, 'Agent20', 'File20', 'processing', 'Task20', "CreatedAt20", "UpdatedAt20");
             ]]))
             assert.same({
                 scan_id        = "10",
                 agent_id       = "Agent10",
-                path           = "Path10",
+                filename       = "File10",
                 status         = "new",
                 cuckoo_task_id = "Task10",
                 created_at     = "CreatedAt10",
@@ -70,7 +70,7 @@ describe("DB", function()
             assert.same({
                 scan_id        = "20",
                 agent_id       = "Agent20",
-                path           = "Path20",
+                filename       = "File20",
                 status         = "processing",
                 cuckoo_task_id = "Task20",
                 created_at     = "CreatedAt20",
@@ -90,26 +90,26 @@ describe("DB", function()
             local now = os.time()
             local now_dt = DB.datetime(now)
 
-            local scan_id = assert(db:scan_new("Agent10", "Path10", now))
+            local scan_id = assert(db:scan_new("Agent10", "File10", now))
             assert.same("1", scan_id)
 
-            local scan_id = assert(db:scan_new("Agent20", "Path20", now))
+            local scan_id = assert(db:scan_new("Agent20", "File20", now))
             assert.same("2", scan_id)
 
             local rows = assert(query(db_, [[
-                SELECT status, agent_id, path, created_at, updated_at
+                SELECT status, agent_id, filename, created_at, updated_at
                   FROM scan
                  ORDER BY scan_id;
             ]]))
             assert.same(2, #rows)
-            assert.same({"new", "Agent10", "Path10", now_dt, now_dt}, rows[1])
-            assert.same({"new", "Agent20", "Path20", now_dt, now_dt}, rows[2])
+            assert.same({"new", "Agent10", "File10", now_dt, now_dt}, rows[1])
+            assert.same({"new", "Agent20", "File20", now_dt, now_dt}, rows[2])
         end)
     end)
 
     describe("scan_set_processing", function()
         it("should udpate status of the scanning task", function()
-            local scan_id = assert(db:scan_new("Agent", "Path"))
+            local scan_id = assert(db:scan_new("Agent", "filename"))
             assert(db:scan_set_processing(scan_id, "TaskID", 10))
 
             local task = assert(db:scan_get(scan_id))
@@ -125,16 +125,16 @@ describe("DB", function()
 
     test("select", function()
         assert(query(db_, [[
-            INSERT INTO scan (scan_id, agent_id, path) VALUES
-                (10, 'Agent10', 'Path10'),
-                (20, 'Agent20', 'Path20');
+            INSERT INTO scan (scan_id, agent_id, filename) VALUES
+                (10, 'Agent10', 'File10'),
+                (20, 'Agent20', 'File20');
         ]]))
         local rows = assert(db:select[[
-            SELECT 10 * scan_id, agent_id || ':' || path AS Foo FROM scan;
+            SELECT 10 * scan_id, agent_id || ':' || filename AS Foo FROM scan;
         ]])
         assert.same(3, #rows)
         assert.same({"10 * scan_id", "Foo"}, rows[1])
-        assert.same({100, "Agent10:Path10"}, rows[2])
-        assert.same({200, "Agent20:Path20"}, rows[3])
+        assert.same({100, "Agent10:File10"}, rows[2])
+        assert.same({200, "Agent20:File20"}, rows[3])
     end)
 end)

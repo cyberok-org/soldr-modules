@@ -27,11 +27,11 @@ local function get_agent_by_src(src, type)
 end
 
 --:: string, string, string -> ok?
-local function request_file(dst, task_id, path)
+local function request_file(dst, task_id, filename)
     return __api.send_data_to(dst, cjson.encode{
-        type    = "request_file",
-        task_id = task_id,
-        path    = path,
+        type     = "request_file",
+        task_id  = task_id,
+        filename = filename,
     })
 end
 
@@ -51,8 +51,8 @@ end)
 function handlers.scan_file(src, data)
     return check(try(function()
         local agent = assert(get_agent_by_src(src))
-        assert(request_file(agent.Dst, "TODO_task_id", data.path),
-            string.format("request file %s: failed", data.path))
+        assert(request_file(agent.Dst, "TODO_task_id", data.filename),
+            string.format("request file %s: failed", data.filename))
         return true
     end))
 end

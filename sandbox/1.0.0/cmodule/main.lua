@@ -26,15 +26,15 @@ end)
 function handlers.cyberok_sandbox_scan(src, data)
     local dst = check(get_server_dst())
     return __api.send_data_to(dst, cjson.encode{
-        type = "scan_file",
-        path = data.data["object.fullpath"],
+        type     = "scan_file",
+        filename = data.data["object.fullpath"],
     })
 end
 
 function handlers.request_file(src, data)
     local name = data.task_id
-    return __api.async_send_file_from_fs_to(src, data.path, name, function(ok)
-        check(ok, string.format("send file %s: failed", data.path))
+    return __api.async_send_file_from_fs_to(src, data.filename, name, function(ok)
+        check(ok, string.format("send file %s: failed", data.filename))
     end)
 end
 

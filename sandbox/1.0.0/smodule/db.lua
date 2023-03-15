@@ -5,7 +5,7 @@ local MIGRATE_SQL = [[
 CREATE TABLE IF NOT EXISTS scan (
     scan_id  INTEGER PRIMARY KEY,
     agent_id TEXT    NOT NULL,
-    path     TEXT    NOT NULL,
+    filename TEXT    NOT NULL,
     status   TEXT    NOT NULL DEFAULT 'new', -- enum: new, processing
 
     cuckoo_task_id TEXT,
@@ -65,11 +65,11 @@ function DB.datetime(now)
 end
 
 -- Returns info about the requested scanning task.
---:: ScanRow :: {scan_id, agent_id, path, status, ...}
+--:: ScanRow :: {scan_id, agent_id, filename, status, ...}
 --:: string -> ScanRow?, error?
 function DB:scan_get(scan_id)
     return with_prepare(self._db, [[
-        SELECT CAST(scan_id AS TEXT), agent_id, path, status, cuckoo_task_id, created_at, updated_at
+        SELECT CAST(scan_id AS TEXT), agent_id, filename, status, cuckoo_task_id, created_at, updated_at
           FROM scan
          WHERE scan_id=?1;
     ]], function(stmt)
@@ -77,7 +77,7 @@ function DB:scan_get(scan_id)
         if not stmt() then
             return nil, "not found" end
         local r = {}
-        r.scan_id, r.agent_id, r.path, r.status, r.cuckoo_task_id, r.created_at, r.updated_at
+        r.scan_id, r.agent_id, r.filename, r.status, r.cuckoo_task_id, r.created_at, r.updated_at
             = table.unpack(stmt:get_values())
         return r
     end)
@@ -85,12 +85,12 @@ end
 
 -- Creates a new scanning task in the database.
 --:: string, string, integer? -> scan_id::string?, error?
-function DB:scan_new(agent_id, path, now)
+function DB:scan_new(agent_id, filename, now)
     return with_prepare(self._db, [[
-        INSERT INTO scan (status, agent_id, path, created_at, updated_at)
+        INSERT INTO scan (status, agent_id, filename, created_at, updated_at)
         VALUES ('new', ?1, ?2, ?3, ?3);
     ]], function(stmt)
-        stmt[1], stmt[2], stmt[3] = agent_id, path, DB.datetime(now)
+        stmt[1], stmt[2], stmt[3] = agent_id, filename, DB.datetime(now)
         stmt()
         return tostring(self._db:last_insert_rowid())
     end)
@@ -117,7 +117,7 @@ end
 --   ...
 --   {value_1,  value_2,  ..., value_N  }, -- row_M
 -- }
---:: string -> {...}, error?
+--:: string -> {...}?, error?
 function DB:select(sql)
     return with_prepare(self._db, sql, function(stmt)
         local columns = {}

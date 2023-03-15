@@ -35,7 +35,7 @@ end
 ---@return integer? # Cuckoo's task id
 ---@return string? # Error message if any
 function Cuckoo:create_task(filename)
-    assert(type(filename) == "string", "filename must be string")
+    assert(type(filename) == "string", "filename must be a string")
     return with_curl(function(h)
         h:set("HTTPHEADER", { "Authorization: Bearer " .. self.api_key })
         h:set("URL", self.base_url .. "/tasks/create/file")

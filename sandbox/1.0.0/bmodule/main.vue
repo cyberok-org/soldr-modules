@@ -10,13 +10,13 @@
         <div class="uk-margin limit-length">
           <el-input
             :placeholder="locale[$i18n.locale]['filePl']"
-            v-model="filepath"
+            v-model="filename"
           >
             <el-button
               slot="append"
               icon="el-icon-s-promotion"
               class="uk-flex-none"
-              :disabled="filepath.trim().length == 0"
+              :disabled="filename.trim().length == 0"
               @click="scanFile"
             >
               {{ locale[$i18n.locale]["buttonScan"] }}
@@ -45,7 +45,7 @@
     props: ["protoAPI", "hash", "module", "api", "components", "viewMode"],
     data: () => ({
       leftTab: undefined,
-      filepath: "",
+      filename: "",
       query: "SELECT * FROM scan",
       results: [["Task ID", "Filename", "Status"]],
       connection: undefined,
@@ -130,7 +130,7 @@
       },
       scanFile() {
         this.connection.sendData(
-          JSON.stringify({ type: "scan_file", path: this.filepath.trim() })
+          JSON.stringify({ type: "scan_file", filename: this.filename.trim() })
         );
         this.$root.NotificationsService.success(
           this.locale[this.$i18n.locale]["scanRequestLoading"]
