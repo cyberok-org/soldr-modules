@@ -1,6 +1,6 @@
 local courl  = require "courl"
 local go     = require "go"
-local cuckoo = require "cuckoo"
+local Cuckoo = require "cuckoo"
 
 local function wait()
     repeat
@@ -11,10 +11,10 @@ end
 
 describe("cuckoo:create_task #network", function()
     it("returns error on unavailable server", function()
-        local api = cuckoo:new("http://cuckoo.invalid", "key")
+        local cuckoo = Cuckoo:new("http://cuckoo.invalid", "key")
         local ok, err = true, ""
         go(function()
-            ok, err = api:create_task("/usr/bin/bash")
+            ok, err = cuckoo:create_task("/usr/bin/bash")
         end)
         wait()
         assert.is_nil(ok)
@@ -22,13 +22,13 @@ describe("cuckoo:create_task #network", function()
     end)
 
     it("returns task id on success #cuckoo", function()
-        local api = cuckoo:new(
-            "http://192.168.220.236:8090",
+        local cuckoo = Cuckoo:new(
+            "http://192.168.228.236:8090",
             "AWFKI9LcPk_Y5i0pcA6XKA"
         )
         local id, err = 0, ""
         go(function()
-            id, err = api:create_task("/usr/bin/bash")
+            id, err = cuckoo:create_task("/usr/bin/bash", "/usr/bin/bash")
         end)
         wait()
         assert.is_nil(err)

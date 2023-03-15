@@ -32,9 +32,10 @@ end
 
 ---Creates a task to analyze a file named `filename` in Cuckoo
 ---@param filename string
+---@param original_name? string
 ---@return integer? # Cuckoo's task id
 ---@return string? # Error message if any
-function Cuckoo:create_task(filename)
+function Cuckoo:create_task(filename, original_name)
     assert(type(filename) == "string", "filename must be a string")
     return with_curl(function(h)
         h:set("HTTPHEADER", { "Authorization: Bearer " .. self.api_key })
@@ -43,6 +44,9 @@ function Cuckoo:create_task(filename)
         local part = mime:part()
         part:name("file")
         part:file(filename)
+        if original_name then
+            part:filename(original_name)
+        end
         h:set("MIMEPOST", mime)
         local body = ""
         h:set("WRITEFUNCTION", function(buf, size)
