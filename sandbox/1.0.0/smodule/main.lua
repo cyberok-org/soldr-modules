@@ -59,7 +59,7 @@ end
 function handlers.scan_file(src, data)
     return check(try(function()
         local agent = assert(get_agent_by_src(src))
-        local scan_id, err = db:scan_new(agent.ID, data.filename),
+        local scan_id, err = db:scan_new(agent.ID, data.filename)
         assert(scan_id, string.format("creating a scanning task: %s", err))
         assert(request_file(agent.Dst, scan_id, data.filename),
             string.format("request file %s: failed", data.filename))
