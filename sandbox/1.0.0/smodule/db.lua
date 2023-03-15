@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS scan (
     filename TEXT    NOT NULL,
     status   TEXT    NOT NULL DEFAULT 'new', -- enum: new, processing
 
-    cuckoo_task_id TEXT,
+    cuckoo_task_id INTEGER,
 
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, -- datetime: YYYY-MM-DD HH:MM:SS
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP  -- datetime: YYYY-MM-DD HH:MM:SS
