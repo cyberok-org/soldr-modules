@@ -89,7 +89,8 @@ end
 
 function handlers.exec_sql(src, data)
     return check(try(function()
-        local rows = assert(db:select(data.query))
+        local rows, err = db:select(data.query)
+        assert(rows, string.format("executing SQL: %s", err))
         assert(__api.send_data_to(src, cjson.encode{
             type = "show_sql_rows",
             data = rows,
