@@ -1,6 +1,6 @@
 local courl  = require "courl"
 local curl   = require "libcurl"
-local json   = require "cjson.safe"
+local cjson  = require "cjson"
 local try    = require "try"
 local ffi    = require "ffi"
 
@@ -31,33 +31,36 @@ local function with_curl(func)
 end
 
 ---Creates a task to analyze a file named `filename` in Cuckoo
----@param filename string
----@param original_name? string
+---@param file string
+---@param filename? string
 ---@return integer? # Cuckoo's task id
 ---@return string? # Error message if any
-function Cuckoo:create_task(filename, original_name)
-    assert(type(filename) == "string", "filename must be a string")
+function Cuckoo:create_task(file, filename)
     return with_curl(function(h)
-        h:set("HTTPHEADER", { "Authorization: Bearer " .. self.api_key })
         h:set("URL", self.base_url .. "/tasks/create/file")
+        h:set("HTTPHEADER", {
+            "Authorization: Bearer " .. self.api_key })
+
         local mime = h:mime()
         local part = mime:part()
         part:name("file")
-        part:file(filename)
-        if original_name then
-            part:filename(original_name)
+        part:file(file)
+        if filename then
+            part:filename(filename)
         end
         h:set("MIMEPOST", mime)
+
         local body = ""
         h:set("WRITEFUNCTION", function(buf, size)
             body = body .. ffi.string(buf, size)
             return size
         end)
-        assert(courl:perform(h))
 
+        assert(courl:perform(h))
         local code = h:info("RESPONSE_CODE")
         assert(code == 200, string.format("got unexpected response code %d", code))
-        local task = assert(json.decode(body))
+
+        local task = cjson.decode(body)
         return task.task_id
     end)
 end
