@@ -1,0 +1,26 @@
+title: |md
+### Error feedback mechanisms:
+- **browser**: `NotificationsService`
+- **server**: `__log.error()`
+- **agent**: `__log.error()`, `event.error`
+| {near: top-center}
+
+
+Error on server {
+	shape: sequence_diagram
+	browser; server; agent
+	server.a-> server.a: __log.error()
+	browser.a <- server.a -> agent.a: send_error()
+	browser.a -> browser.a: NotificationsService
+	agent.a -> agent.a: __log.error()\nevent.error()
+}
+
+Error on agent {
+	shape: sequence_diagram
+	browser; server; agent
+	agent.a -> agent.a: __log.error()\nevent.error()
+	agent.a -> server.a: send_error()
+	server.a -> server.a: __log.error()
+	server.a -> browser.a: send_error()
+	browser.a -> browser.a: NotificationsService
+}
