@@ -137,11 +137,15 @@
           );
         } else if (msg.type == "show_sql_rows") {
           this.results = msg.data;
+        } else if (msg.type == "error") {
+          const text = "[" + msg.code + "] " + msg.message;
+          this.$root.NotificationsService.error(text);
         } else {
           this.$root.NotificationsService.error(
             this.locale[this.$i18n.locale]["unknownMessageError"]
           );
         }
+        return true;
       },
       execSQL() {
         this.connection.sendData(

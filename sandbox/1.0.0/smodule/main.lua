@@ -2,6 +2,7 @@ local cjson     = require "cjson"
 local courl     = require "courl"
 local Cuckoo    = require "cuckoo"
 local DB        = require "db"
+local error     = require "error"
 local go        = require "go"
 local MethodMap = require "mmap"
 local time      = require "time"
@@ -97,6 +98,13 @@ function handlers.exec_sql(src, data)
         }), "TODO_error")
         return true
     end))
+end
+
+function handlers.error(src, data)
+    local agent = get_agent_by_src(src)
+    local err = error.from_data(data)
+    __log.error(tostring(err))
+    error.broadcast(err:by_agent(agent.ID), "Browser")
 end
 
 __api.add_cbs {

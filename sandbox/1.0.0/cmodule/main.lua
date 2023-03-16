@@ -1,4 +1,5 @@
 local cjson     = require "cjson"
+local error     = require "error"
 local event     = require "event"
 local MethodMap = require "mmap"
 
@@ -6,6 +7,7 @@ local function check(...)
     local ok, err = ...; if not ok then
         __log.error(err)
         event.error(err)
+        error.broadcast(err)
     end; return ...
 end
 
@@ -34,8 +36,13 @@ end
 function handlers.request_file(src, data)
     local name = data.scan_id
     return __api.async_send_file_from_fs_to(src, data.filename, name, function(ok)
-        check(ok, string.format("send file %s: failed", data.filename))
+        check(ok, error.SendFile(data.filename):by_agent())
     end)
+end
+
+function handlers.error(src, data)
+    __log.error(data.message)
+    event.error(data.message)
 end
 
 local function update_config()
