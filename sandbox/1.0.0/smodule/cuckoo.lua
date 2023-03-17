@@ -5,18 +5,17 @@ local try    = require "try"
 local ffi    = require "ffi"
 
 ---@class Cuckoo
----@field base_url string
----@field api_key string
+---@field private base_url string
+---@field private api_key string
 local Cuckoo = {}
 
 ---Creates new Cuckoo API instance
----@param base_url string
----@param api_key string
----@return any
-function Cuckoo:new(base_url, api_key)
-    local o = {
-        base_url = base_url,
-        api_key = api_key,
+---@param config? Cuckoo
+---@return Cuckoo
+function Cuckoo:new(config)
+    local o = config or {
+        base_url = "",
+        api_key = ""
     }
     setmetatable(o, self)
     self.__index = self
@@ -28,6 +27,13 @@ local function with_curl(func)
     local result = table.pack(try(func, h))
     h:close()
     return table.unpack(result)
+end
+
+---Reconfigure cuckoo instance
+---@param config Cuckoo
+function Cuckoo:configure(config)
+    self.base_url = config.base_url
+    self.api_key = config.api_key
 end
 
 ---Creates a task to analyze a file named `filename` in Cuckoo

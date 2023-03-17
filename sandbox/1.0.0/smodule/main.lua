@@ -21,14 +21,14 @@ if err then
     return "success"
 end
 
-local cuckoo
+local cuckoo = Cuckoo:new()
 
 local function update_config()
     local module_config = cjson.decode(__config.get_current_config())
-    cuckoo = Cuckoo:new(
-        module_config.cuckoo_url,
-        module_config.cuckoo_key
-    )
+    cuckoo:configure({
+        base_url = module_config.cuckoo_url,
+        api_key = module_config.cuckoo_key
+    })
 end
 update_config()
 
