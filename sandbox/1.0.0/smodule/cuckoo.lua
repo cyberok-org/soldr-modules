@@ -10,10 +10,9 @@ local ffi    = require "ffi"
 local Cuckoo = {}
 
 ---Creates new Cuckoo API instance
----@param config? Cuckoo
 ---@return Cuckoo
-function Cuckoo:new(config)
-    local o = config or {
+function Cuckoo:new()
+    local o = {
         base_url = "",
         api_key = ""
     }
@@ -30,10 +29,11 @@ local function with_curl(func)
 end
 
 ---Reconfigure cuckoo instance
----@param config Cuckoo
-function Cuckoo:configure(config)
-    self.base_url = config.base_url
-    self.api_key = config.api_key
+---@param url string
+---@param key string
+function Cuckoo:configure(url, key)
+    self.base_url = url
+    self.api_key = key
 end
 
 ---Creates a task to analyze a file named `filename` in Cuckoo
