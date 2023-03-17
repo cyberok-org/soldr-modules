@@ -24,10 +24,10 @@ end
 local cuckoo
 
 local function update_config()
-    -- todo: stop current connections
+    local module_config = cjson.decode(__config.get_current_config())
     cuckoo = Cuckoo:new(
-        "http://192.168.220.236:8090",
-        "AWFKI9LcPk_Y5i0pcA6XKA"
+        module_config.cuckoo_url,
+        module_config.cuckoo_key
     )
 end
 update_config()

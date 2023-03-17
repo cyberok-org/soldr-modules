@@ -9,7 +9,38 @@
             "description": "Отправляет файлы на проверку в песочницу"
         }
     },
-    "config": {},
+    "config": {
+        "cuckoo_key": {
+            "en": {
+                "title": "Cuckoo API Key",
+                "description": ""
+            },
+            "ru": {
+                "title": "Ключ Cuckoo API",
+                "description": ""
+            }
+        },
+        "cuckoo_url": {
+            "en": {
+                "title": "Cuckoo URL",
+                "description": ""
+            },
+            "ru": {
+                "title": "Cuckoo URL",
+                "description": ""
+            }
+        },
+        "score_threshold": {
+            "en": {
+                "title": "Score threashold",
+                "description": ""
+            },
+            "ru": {
+                "title": "Порог оценки",
+                "description": ""
+            }
+        }
+    },
     "secure_config": {},
     "fields": {
         "message": {

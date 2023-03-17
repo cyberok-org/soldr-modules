@@ -1,6 +1,42 @@
 {
-    "additionalProperties": false,
-    "properties": {},
-    "required": [],
-    "type": "object"
+  "additionalProperties": false,
+  "properties": {
+    "cuckoo_key": {
+      "type": "string",
+      "ui": {
+        "widgetConfig": {}
+      },
+      "rules": {
+        "required": {
+          "value": true
+        }
+      }
+    },
+    "cuckoo_url": {
+      "ui": {
+        "widgetConfig": {}
+      },
+      "rules": {
+        "url": true,
+        "required": {
+          "value": true
+        }
+      }
+    },
+    "score_threshold": {
+      "type": "number",
+      "ui": {
+        "widgetConfig": {}
+      },
+      "rules": {
+        "required": {
+          "value": true
+        },
+        "minimum": 0.0,
+        "maximum": 10.0
+      }
+    }
+  },
+  "required": ["cuckoo_key", "cuckoo_url", "score_threshold"],
+  "type": "object"
 }
