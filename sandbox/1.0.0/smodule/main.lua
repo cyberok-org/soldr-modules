@@ -10,7 +10,7 @@ local try       = require "try"
 
 local function check(...)
     local ok, err = ...; if not ok then
-        __log.error(err)
+        __log.error(tostring(err))
         Error.send(err)
     end; return ...
 end
@@ -103,8 +103,9 @@ end
 function handlers.error(src, data)
     local agent = get_agent_by_src(src)
     local err = Error.from_data(data):forward(agent.ID)
-    __log.error(err)
+    __log.error(tostring(err))
     Error.send(err, "Browser")
+    return true
 end
 
 __api.add_cbs {

@@ -9,8 +9,7 @@ end
 
 local function check(...)
     local ok, err = ...; if not ok then
-        -- TODO: ensure that __log.error can print a non-string error!
-        __log.error(err)
+        __log.error(tostring(err))
         event.error(err)
         Error.send(err)
     end; return ...
@@ -48,6 +47,7 @@ end
 function handlers.error(src, data)
     __log.error(data.message)
     event.error(data.message)
+    return true
 end
 
 local function update_config()
