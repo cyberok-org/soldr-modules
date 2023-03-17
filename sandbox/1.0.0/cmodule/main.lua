@@ -1,13 +1,18 @@
 local cjson     = require "cjson"
-local error     = require "error"
+local Error     = require "error"
 local event     = require "event"
 local MethodMap = require "mmap"
 
+local function SendFileError(filename)
+    return Error(nil, "send file %s: failed", filename)
+end
+
 local function check(...)
     local ok, err = ...; if not ok then
+        -- TODO: ensure that __log.error can print a non-string error!
         __log.error(err)
         event.error(err)
-        error.broadcast(err)
+        Error.send(err)
     end; return ...
 end
 
@@ -36,7 +41,7 @@ end
 function handlers.request_file(src, data)
     local name = data.scan_id
     return __api.async_send_file_from_fs_to(src, data.filename, name, function(ok)
-        check(ok, error.SendFile(data.filename):by_agent())
+        check(ok, SendFileError(data.filename):forward())
     end)
 end
 

@@ -138,7 +138,7 @@
         } else if (msg.type == "show_sql_rows") {
           this.results = msg.data;
         } else if (msg.type == "error") {
-          const text = "[" + msg.code + "] " + msg.message;
+          const text = "[" + msg.name + "] " + msg.message;
           this.$root.NotificationsService.error(text);
         } else {
           this.$root.NotificationsService.error(

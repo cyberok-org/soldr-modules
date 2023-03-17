@@ -2,7 +2,7 @@ local cjson     = require "cjson"
 local courl     = require "courl"
 local Cuckoo    = require "cuckoo"
 local DB        = require "db"
-local error     = require "error"
+local Error     = require "error"
 local go        = require "go"
 local MethodMap = require "mmap"
 local time      = require "time"
@@ -10,8 +10,8 @@ local try       = require "try"
 
 local function check(...)
     local ok, err = ...; if not ok then
-        -- TODO: send the error to an agent
         __log.error(err)
+        Error.send(err)
     end; return ...
 end
 
@@ -102,9 +102,9 @@ end
 
 function handlers.error(src, data)
     local agent = get_agent_by_src(src)
-    local err = error.from_data(data)
-    __log.error(tostring(err))
-    error.broadcast(err:by_agent(agent.ID), "Browser")
+    local err = Error.from_data(data):forward(agent.ID)
+    __log.error(err)
+    Error.send(err, "Browser")
 end
 
 __api.add_cbs {

@@ -29,7 +29,7 @@ end
 -- Used to emit "cyberok_sandbox_error" event.
 function M.error(err)
     push_event("cyberok_sandbox_error", {
-        code    = err.code,
+        name    = err.name,
         message = tostring(err),
     })
 end
