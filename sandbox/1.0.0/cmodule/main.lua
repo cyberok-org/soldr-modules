@@ -3,16 +3,16 @@ local Error     = require "error"
 local event     = require "event"
 local MethodMap = require "mmap"
 
-local function SendFileError(filename)
-    return Error(nil, "send file %s: failed", filename)
-end
-
 local function check(...)
     local ok, err = ...; if not ok then
         __log.error(tostring(err))
         event.error(err)
-        Error.send(err)
+        Error.forward(__aid, err)
     end; return ...
+end
+
+local function SendFileError(filename)
+    return Error(nil, "send file %s: failed", filename)
 end
 
 --:: () -> string?, error?
@@ -40,7 +40,7 @@ end
 function handlers.request_file(src, data)
     local name = data.scan_id
     return __api.async_send_file_from_fs_to(src, data.filename, name, function(ok)
-        check(ok, SendFileError(data.filename):forward())
+        check(ok, SendFileError(data.filename))
     end)
 end
 
