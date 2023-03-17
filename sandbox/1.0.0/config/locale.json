@@ -32,7 +32,7 @@
         },
         "score_threshold": {
             "en": {
-                "title": "Score threashold",
+                "title": "Score threshold",
                 "description": ""
             },
             "ru": {
@@ -90,7 +90,7 @@
         "cyberok_sandbox_error": {
             "en": {
                 "title": "Error",
-                "description": "An error occured in the module"
+                "description": "An error occurred in the module"
             },
             "ru": {
                 "title": "Ошибка",
