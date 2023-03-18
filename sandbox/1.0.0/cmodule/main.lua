@@ -50,8 +50,9 @@ function handlers.request_file(src, data)
 end
 
 function handlers.error(src, data)
-    __log.error(data.message)
-    event.error(data.message)
+    local err = Error.from_data(data)
+    __log.error(tostring(err))
+    event.error(err)
     return true
 end
 
