@@ -1,6 +1,6 @@
 -- Strips "FILE:LINE:" prefix from an error message produced by assert/error().
 local function strip_prefix(err)
-    local PATTERN = "^.-:.-: "
+    local PATTERN = "^.-:%d-: "
     if type(err) == "string" then
         err = string.gsub(err, PATTERN, "")
     end

@@ -138,8 +138,9 @@
         } else if (msg.type == "show_sql_rows") {
           this.results = msg.data;
         } else if (msg.type == "error") {
-          const text = "[" + msg.name + "] " + msg.message;
-          this.$root.NotificationsService.error(text);
+          const localized = this.locale[this.$i18n.locale][msg.name];
+          const message = localized || `[${msg.name}] ${msg.message}`;
+          this.$root.NotificationsService.error(message);
         } else {
           this.$root.NotificationsService.error(
             this.locale[this.$i18n.locale]["unknownMessageError"]

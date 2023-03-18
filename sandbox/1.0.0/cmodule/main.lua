@@ -4,15 +4,18 @@ local event     = require "event"
 local MethodMap = require "mmap"
 
 local function check(...)
-    local ok, err = ...; if not ok then
+    local ok, err = ...; if not ok and err then
         __log.error(tostring(err))
         event.error(err)
         Error.forward(__aid, err)
     end; return ...
 end
 
-local function SendFileError(filename)
-    return Error(nil, "send file %s: failed", filename)
+local ServerNotAvailableError = function()
+    return Error(nil, "server is not available")
+end
+local SendFileError = function(scan_id, filename)
+    return Error(nil, "scan_id=%s: send file %s: failed", scan_id, filename)
 end
 
 --:: () -> string?, error?
@@ -20,7 +23,7 @@ local function get_server_dst()
     for _, agent in pairs(__agents.dump()) do
         return agent.Dst
     end
-    return nil, "failed to resolve destinaton to server"
+    return nil, ServerNotAvailableError()
 end
 
 local handlers = MethodMap.new(function(src, data, name)
@@ -30,17 +33,19 @@ end)
 
 -- Action: cyberok_sandbox_scan
 function handlers.cyberok_sandbox_scan(src, data)
-    local dst = check(get_server_dst())
-    return __api.send_data_to(dst, cjson.encode{
-        type     = "scan_file",
-        filename = data.data["object.fullpath"],
-    })
+    local dst = check(get_server_dst()); if dst then
+        local ok = __api.send_data_to(dst, {
+            type     = "scan_file",
+            filename = data.data["object.fullpath"],
+        })
+        return check(ok, ServerNotAvailableError())
+    end
 end
 
 function handlers.request_file(src, data)
     local name = data.scan_id
     return __api.async_send_file_from_fs_to(src, data.filename, name, function(ok)
-        check(ok, SendFileError(data.filename))
+        check(ok, SendFileError(data.scan_id, data.filename))
     end)
 end
 

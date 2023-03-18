@@ -9,7 +9,7 @@ local time      = require "time"
 local try       = require "try"
 
 local function check(dst, ...)
-    local ok, err = ...; if not ok then
+    local ok, err = ...; if not ok and err then
         __log.error(tostring(err))
         Error.forward(dst, err)
     end; return ...
@@ -17,6 +17,24 @@ end
 
 local AgentNotAvailableError = function()
     return Error(nil, "agent is not available")
+end
+local ScanCreateError = function(err)
+    return Error(nil, "creating a new scanning task: %s", err)
+end
+local ScanGetError = function(scan_id, err)
+    return Error(nil, "scan_id=%s: getting task info: %s", scan_id, err)
+end
+local ScanUpdateError = function(scan_id, status, err)
+    return Error(nil, "scan_id=%s: updating task, status=%s: %s", scan_id, status, err)
+end
+local RequestFileError = function(scan_id, filename)
+    return Error(nil, "scan_id=%s: request file %s: failed", scan_id, filename)
+end
+local CuckooCreateTaskError = function(scan_id, err)
+    return Error(nil, "scan_id=%s: submit the task to Cuckoo: %s", scan_id, err)
+end
+local ExecSQLError = function(err)
+    return Error(nil, "exec SQL: %s", err)
 end
 
 local db, err = check(nil, DB.open("data/"..__pid..".cyberok_sandbox.db"))
@@ -62,10 +80,9 @@ function handlers.scan_file(src, data)
     check(src, try(function()
         local agent = assert(get_agent_by_src(src))
         local scan_id, err = db:scan_new(agent.ID, data.filename)
-        assert(scan_id, string.format("creating a scanning task: %s", err))
+        assert(scan_id, ScanCreateError(err))
         assert(request_file(agent.Dst, scan_id, data.filename),
-            string.format("request file %s: failed", data.filename))
-        return true
+            RequestFileError(scan_id, data.filename))
     end))
     return true
 end
@@ -76,15 +93,11 @@ local function receive_file(src, path, name)
         check(src, try(function()
             local scan_id = name
             local scan, err = db:scan_get(scan_id)
-            assert(scan, string.format(
-                "getting the scanning task: scan_id=%s: %s", scan_id, err))
-
+            assert(scan, ScanGetError(scan_id, err))
             local task_id, err = cuckoo:create_task(path, scan.filename)
-            assert(task_id, string.format("cuckoo: creating a task: %s", err))
-
+            assert(task_id, CuckooCreateTaskError(scan_id, err))
             local ok, err = db:scan_set_processing(scan_id, task_id)
-            assert(ok, string.format("update the scanning task: %s", err))
-            return true
+            assert(ok, ScanUpdateError(scan_id, "processing", err))
         end))
     end)
     return true
@@ -93,12 +106,9 @@ end
 function handlers.exec_sql(src, data)
     check(src, try(function()
         local rows, err = db:select(data.query)
-        assert(rows, string.format("executing SQL: %s", err))
-        assert(__api.send_data_to(src, cjson.encode{
-            type = "show_sql_rows",
-            data = rows,
-        }), "TODO_error")
-        return true
+        assert(rows, ExecSQLError(err))
+        __api.send_data_to(src,
+            cjson.encode{ type = "show_sql_rows", data = rows })
     end))
     return true
 end
