@@ -12,10 +12,10 @@ local function check(...)
 end
 
 local ServerNotAvailableError = function()
-    return Error(nil, "server is not available")
+    return Error("server is not available")
 end
 local SendFileError = function(scan_id, filename)
-    return Error(nil, "scan_id=%s: send file %s: failed", scan_id, filename)
+    return Error("scan_id=%s: send file %s: failed", scan_id, filename)
 end
 
 --:: () -> string?, error?

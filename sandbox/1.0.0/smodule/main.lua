@@ -16,25 +16,25 @@ local function check(dst, ...)
 end
 
 local AgentNotAvailableError = function()
-    return Error(nil, "agent is not available")
+    return Error("agent is not available")
 end
 local ScanCreateError = function(err)
-    return Error(nil, "creating a new scanning task: %s", err)
+    return Error("creating a new scanning task: %s", err)
 end
 local ScanGetError = function(scan_id, err)
-    return Error(nil, "scan_id=%s: getting task info: %s", scan_id, err)
+    return Error("scan_id=%s: getting task info: %s", scan_id, err)
 end
 local ScanUpdateError = function(scan_id, status, err)
-    return Error(nil, "scan_id=%s: updating task, status=%s: %s", scan_id, status, err)
+    return Error("scan_id=%s: updating task, status=%s: %s", scan_id, status, err)
 end
 local RequestFileError = function(scan_id, filename)
-    return Error(nil, "scan_id=%s: request file %s: failed", scan_id, filename)
+    return Error("scan_id=%s: request file %s: failed", scan_id, filename)
 end
 local CuckooCreateTaskError = function(scan_id, err)
-    return Error(nil, "scan_id=%s: submit the task to Cuckoo: %s", scan_id, err)
+    return Error("scan_id=%s: submit the task to Cuckoo: %s", scan_id, err)
 end
 local ExecSQLError = function(err)
-    return Error(nil, "exec SQL: %s", err)
+    return Error("exec SQL: %s", err)
 end
 
 local db, err = check(nil, DB.open("data/"..__pid..".cyberok_sandbox.db"))
@@ -74,13 +74,13 @@ local function get_agent_by_src(src, type)
     return nil, AgentNotAvailableError()
 end
 
---:: string, string, string -> ok?
+--:: string, string, string -> boolean, error?
 local function request_file(dst, scan_id, filename)
     return __api.send_data_to(dst, cjson.encode{
         type     = "request_file",
         scan_id  = scan_id,
         filename = filename,
-    })
+    }), RequestFileError(scan_id, filename)
 end
 
 function handlers.scan_file(src, data)
@@ -88,8 +88,7 @@ function handlers.scan_file(src, data)
         local agent = assert(get_agent_by_src(src))
         local scan_id, err = db:scan_new(agent.ID, data.filename)
         assert(scan_id, ScanCreateError(err))
-        assert(request_file(agent.Dst, scan_id, data.filename),
-            RequestFileError(scan_id, data.filename))
+        assert(request_file(agent.Dst, scan_id, data.filename))
     end))
     return true
 end

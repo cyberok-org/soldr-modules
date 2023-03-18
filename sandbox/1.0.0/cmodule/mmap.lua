@@ -5,7 +5,7 @@ MethodMap.__index = MethodMap
 -- results in calling one of the methods declared as members of the table.
 -- Provided `mapper` should map input arguments of the call to the target
 -- method name and arguments for the method.
---:: (... -> method::string,...) -> MethodMap
+--:: (any... -> method::string, any...) -> MethodMap
 function MethodMap.new(mapper)
     return setmetatable({ _map = mapper }, MethodMap)
 end

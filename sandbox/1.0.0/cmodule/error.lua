@@ -1,19 +1,26 @@
 local cjson = require "cjson"
 
-local Error = {}
+local mt = {}
+local Error = setmetatable({}, mt)
 Error.__index = Error
 
---:: string?, string, any... -> Error
-function Error.new(name, format, ...)
-    local self = {}
-    self.name = name or debug.getinfo(1, "n").name
-    self.message = string.format(format, ...)
-    return setmetatable(self, Error)
+-- Create a new Error.
+-- Two constructing options are available for this type:
+-- 1. The surrounding function's name as value of "name" parameter,
+--    and `format`ed string as value of "message" parameter.
+-- 2. With explicitly provided "name", "message" parameters.
+--:: format::string, any... -> Error
+--:: {name: string, message: string, ...} -> Error
+function Error.new(params, ...)
+    if type(params) ~= "table" then
+        params = {
+            name    = debug.getinfo(1, "n").name,
+            message = string.format(params, ...),
+        }
+    end
+    return setmetatable(params, Error)
 end
-
-local mt = {}
 function mt:__call(...) return Error.new(...) end
-setmetatable(Error, mt)
 
 function Error:__tostring() return self.message end
 
@@ -25,7 +32,7 @@ end
 --:: {type: "error", ...} -> Error?
 function Error.from_data(data)
     if data.type == "error" then
-        return Error.new(data.name, data.message)
+        return Error{ name = data.name, message = data.message }
     end
 end
 
@@ -38,7 +45,7 @@ local function find_agent_id(dst)
     end
 end
 
--- Sends `err` to the agents indentified by ID/Dst == `dst`.
+-- Sends `err` to the agents identified by ID/Dst == `dst`.
 --:: AgentType :: "VXAgent" | "Browser"
 --:: string, error, AgentType? -> ()
 function Error.forward(dst, err, type)
