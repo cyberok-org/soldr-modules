@@ -1,11 +1,11 @@
 {
-    "cuckoo_a1_url": "http://localhost:8090",
-    "cuckoo_a2_key": "S4MPL3",
-    "cuckoo_b1_package": "default",
-    "cuckoo_b2_package_options": "",
-    "cuckoo_b3_priority": 2,
-    "cuckoo_c1_platform": "",
-    "cuckoo_c2_machine": "",
-    "cuckoo_c3_timeout": 120,
-    "score_threshold": 3
+    "a1_cuckoo_url": "http://localhost:8090",
+    "a2_cuckoo_key": "S4MPL3",
+    "b1_cuckoo_package": "default",
+    "b2_cuckoo_package_options": "",
+    "b3_cuckoo_priority": 2,
+    "c1_cuckoo_platform": "",
+    "c2_cuckoo_machine": "",
+    "c3_cuckoo_timeout": 120,
+    "d1_score_threshold": 3
 }

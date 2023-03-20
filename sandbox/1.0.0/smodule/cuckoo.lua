@@ -5,12 +5,12 @@ local try    = require "try"
 local ffi    = require "ffi"
 
 ---@class CuckooOptions
----@field public package string
----@field public package_options string
----@field public priority integer
----@field public platform string
----@field public machine string
----@field public timeout_sec integer
+---@field public package string Analysis package to be used for the analysis
+---@field public options string Options to pass to the analysis package
+---@field public priority integer Priority to assign to the task (1-3)
+---@field public platform string Name of the platform to select the analysis machine from (e.g. “windows”)
+---@field public machine string Label of the analysis machine to use for the analysis
+---@field public timeout integer Analysis timeout (in seconds)
 
 ---@class Cuckoo
 ---@field private base_url string
@@ -19,12 +19,16 @@ local ffi    = require "ffi"
 local Cuckoo = {}
 
 ---Creates new Cuckoo API instance
+---@param url string
+---@param key string
+---@param opts? CuckooOptions
 ---@return Cuckoo
-function Cuckoo:new()
+function Cuckoo:new(url, key, opts)
+    ---@type Cuckoo
     local o = {
-        base_url = "",
-        api_key = "",
-        opts = {},
+        base_url = url,
+        api_key = key,
+        opts = opts or {},
     }
     setmetatable(o, self)
     self.__index = self
@@ -38,17 +42,6 @@ local function with_curl(func)
     return table.unpack(result)
 end
 
-
----Reconfigure cuckoo instance
----@param url string
----@param key string
----@param opts? CuckooOptions
-function Cuckoo:configure(url, key, opts)
-    self.base_url = url
-    self.api_key = key
-    self.opts = opts
-end
-
 ---Creates a task to analyze a file named `filename` in Cuckoo
 ---@param file string
 ---@param filename? string
@@ -58,15 +51,24 @@ function Cuckoo:create_task(file, filename)
     return with_curl(function(h)
         h:set("URL", self.base_url .. "/tasks/create/file")
         h:set("HTTPHEADER", {
-            "Authorization: Bearer " .. self.api_key })
+            "Authorization: Bearer " .. self.api_key
+        })
 
         local mime = h:mime()
+
         local part = mime:part()
         part:name("file")
         part:file(file)
         if filename then
             part:filename(filename)
         end
+
+        for param, value in pairs(self.opts) do
+            part = mime:part()
+            part:name(param)
+            part:data(tostring(value))
+        end
+
         h:set("MIMEPOST", mime)
 
         local body = ""

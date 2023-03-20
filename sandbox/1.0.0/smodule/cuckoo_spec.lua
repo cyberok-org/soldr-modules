@@ -11,8 +11,7 @@ end
 
 describe("cuckoo:create_task #network", function()
     it("returns error on unavailable server", function()
-        local cuckoo = Cuckoo:new()
-        cuckoo:configure("http://cuckoo.invalid", "AWFKI9LcPk_Y5i0pcA6XKA")
+        local cuckoo = Cuckoo:new("http://cuckoo.invalid", "AWFKI9LcPk_Y5i0pcA6XKA")
         local ok, err
         go(function()
             ok, err = cuckoo:create_task("/usr/bin/bash")
@@ -23,8 +22,14 @@ describe("cuckoo:create_task #network", function()
     end)
 
     it("returns task id on success #cuckoo", function()
-        local cuckoo = Cuckoo:new()
-        cuckoo:configure("http://192.168.228.236:8090", "AWFKI9LcPk_Y5i0pcA6XKA")
+        local cuckoo = Cuckoo:new("http://192.168.228.236:8090", "AWFKI9LcPk_Y5i0pcA6XKA", {
+            package  = "exe",
+            options  = "free=yes,procmemdump=no,human=no",
+            priority = 3,
+            platform = "linux",
+            machine  = "cuckoo1",
+            timeout  = 10,
+        })
         local id, err
         go(function()
             id, err = cuckoo:create_task("/usr/bin/bash", "/usr/bin/bash")

@@ -10,7 +10,7 @@
         }
     },
     "config": {
-        "cuckoo_a1_url": {
+        "a1_cuckoo_url": {
             "en": {
                 "title": "Cuckoo URL",
                 "description": ""
@@ -20,7 +20,7 @@
                 "description": ""
             }
         },
-        "cuckoo_a2_key": {
+        "a2_cuckoo_key": {
             "en": {
                 "title": "Cuckoo API Key",
                 "description": ""
@@ -30,7 +30,7 @@
                 "description": ""
             }
         },
-        "cuckoo_b1_package": {
+        "b1_cuckoo_package": {
             "en": {
                 "title": "Analysis package",
                 "description": ""
@@ -40,7 +40,7 @@
                 "description": ""
             }
         },
-        "cuckoo_b2_package_options": {
+        "b2_cuckoo_package_options": {
             "en": {
                 "title": "Analysis package options",
                 "description": ""
@@ -50,7 +50,7 @@
                 "description": ""
             }
         },
-        "cuckoo_b3_priority": {
+        "b3_cuckoo_priority": {
             "en": {
                 "title": "Priority",
                 "description": ""
@@ -60,7 +60,7 @@
                 "description": ""
             }
         },
-        "cuckoo_c1_platform": {
+        "c1_cuckoo_platform": {
             "en": {
                 "title": "Guest platform",
                 "description": ""
@@ -70,7 +70,7 @@
                 "description": ""
             }
         },
-        "cuckoo_c2_machine": {
+        "c2_cuckoo_machine": {
             "en": {
                 "title": "Guest machine",
                 "description": ""
@@ -80,7 +80,7 @@
                 "description": ""
             }
         },
-        "cuckoo_c3_timeout": {
+        "c3_cuckoo_timeout": {
             "en": {
                 "title": "Analysis timeout",
                 "description": "in seconds"
@@ -90,7 +90,7 @@
                 "description": "в секундах"
             }
         },
-        "score_threshold": {
+        "d1_score_threshold": {
             "en": {
                 "title": "Score threshold",
                 "description": ""

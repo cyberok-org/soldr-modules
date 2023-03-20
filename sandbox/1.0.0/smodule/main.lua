@@ -9,7 +9,8 @@ local time      = require "time"
 local try       = require "try"
 
 local db
-local cuckoo = Cuckoo:new()
+---@type Cuckoo
+local cuckoo
 
 local function check(dst, ...)
     local ok, err = ...; if not ok and err then
@@ -122,14 +123,15 @@ controls.default = function() return true end
 
 function controls.update_config()
     local c = cjson.decode(__config.get_current_config())
-    cuckoo:configure(c.cuckoo_a1_url, c.cuckoo_a2_key, {
-        package         = c.cuckoo_b1_package,
-        package_options = c.cuckoo_b2_package_options,
-        priority        = c.cuckoo_b3_priority,
-        platform        = c.cuckoo_c1_platform,
-        machine         = c.cuckoo_c2_machine,
-        timeout_sec     = c.cuckoo_c3_timeout,
+    cuckoo = Cuckoo:new(c.a1_cuckoo_url, c.a2_cuckoo_key, {
+        package  = c.b1_cuckoo_package,
+        options  = c.b2_cuckoo_package_options,
+        priority = c.b3_cuckoo_priority,
+        platform = c.c1_cuckoo_platform,
+        machine  = c.c2_cuckoo_machine,
+        timeout  = c.c3_cuckoo_timeout,
     })
+
     return true
 end
 

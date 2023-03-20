@@ -1,7 +1,7 @@
 {
   "additionalProperties": false,
   "properties": {
-    "cuckoo_a1_url": {
+    "a1_cuckoo_url": {
       "rules": {
         "required": {
           "value": true
@@ -14,7 +14,7 @@
         "widgetConfig": {}
       }
     },
-    "cuckoo_a2_key": {
+    "a2_cuckoo_key": {
       "rules": {
         "required": {
           "value": true
@@ -26,7 +26,7 @@
         "widgetConfig": {}
       }
     },
-    "cuckoo_b1_package": {
+    "b1_cuckoo_package": {
       "rules": {},
       "type": "string",
       "ui": {
@@ -114,7 +114,7 @@
         }
       }
     },
-    "cuckoo_b2_package_options": {
+    "b2_cuckoo_package_options": {
       "rules": {},
       "type": "string",
       "ui": {
@@ -122,7 +122,7 @@
         "widgetConfig": {}
       }
     },
-    "cuckoo_b3_priority": {
+    "b3_cuckoo_priority": {
       "rules": {
         "maximum": 3,
         "minimum": 1
@@ -149,7 +149,7 @@
         }
       }
     },
-    "cuckoo_c1_platform": {
+    "c1_cuckoo_platform": {
       "rules": {},
       "type": "string",
       "ui": {
@@ -174,7 +174,7 @@
         }
       }
     },
-    "cuckoo_c2_machine": {
+    "c2_cuckoo_machine": {
       "rules": {},
       "type": "string",
       "ui": {
@@ -182,7 +182,7 @@
         "widgetConfig": {}
       }
     },
-    "cuckoo_c3_timeout": {
+    "c3_cuckoo_timeout": {
       "rules": {},
       "type": "number",
       "ui": {
@@ -190,7 +190,7 @@
         "widgetConfig": {}
       }
     },
-    "score_threshold": {
+    "d1_score_threshold": {
       "rules": {
         "maximum": 10,
         "minimum": 0,
@@ -204,6 +204,6 @@
       }
     }
   },
-  "required": ["cuckoo_a2_key", "cuckoo_a1_url", "score_threshold"],
+  "required": ["a1_cuckoo_url", "a2_cuckoo_key", "d1_score_threshold"],
   "type": "object"
 }
