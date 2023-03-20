@@ -4,9 +4,18 @@ local cjson  = require "cjson"
 local try    = require "try"
 local ffi    = require "ffi"
 
+---@class CuckooOptions
+---@field public package string
+---@field public package_options string
+---@field public priority integer
+---@field public platform string
+---@field public machine string
+---@field public timeout_sec integer
+
 ---@class Cuckoo
 ---@field private base_url string
 ---@field private api_key string
+---@field private opts? CuckooOptions
 local Cuckoo = {}
 
 ---Creates new Cuckoo API instance
@@ -14,7 +23,8 @@ local Cuckoo = {}
 function Cuckoo:new()
     local o = {
         base_url = "",
-        api_key = ""
+        api_key = "",
+        opts = {},
     }
     setmetatable(o, self)
     self.__index = self
@@ -28,12 +38,15 @@ local function with_curl(func)
     return table.unpack(result)
 end
 
+
 ---Reconfigure cuckoo instance
 ---@param url string
 ---@param key string
-function Cuckoo:configure(url, key)
+---@param opts? CuckooOptions
+function Cuckoo:configure(url, key, opts)
     self.base_url = url
     self.api_key = key
+    self.opts = opts
 end
 
 ---Creates a task to analyze a file named `filename` in Cuckoo

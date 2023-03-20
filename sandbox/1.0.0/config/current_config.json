@@ -1,5 +1,11 @@
 {
-    "cuckoo_key": "",
-    "cuckoo_url": "",
-    "score_threshold": 3.0
+    "cuckoo_a1_url": "http://localhost:8090",
+    "cuckoo_a2_key": "S4MPL3",
+    "cuckoo_b1_package": "default",
+    "cuckoo_b2_package_options": "",
+    "cuckoo_b3_priority": 2,
+    "cuckoo_c1_platform": "",
+    "cuckoo_c2_machine": "",
+    "cuckoo_c3_timeout": 120,
+    "score_threshold": 3
 }

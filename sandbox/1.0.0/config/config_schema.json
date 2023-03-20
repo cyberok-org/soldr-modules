@@ -1,42 +1,209 @@
 {
   "additionalProperties": false,
   "properties": {
-    "cuckoo_key": {
-      "type": "string",
-      "ui": {
-        "widgetConfig": {}
-      },
-      "rules": {
-        "required": {
-          "value": true
-        }
-      }
-    },
-    "cuckoo_url": {
-      "ui": {
-        "widgetConfig": {}
-      },
-      "rules": {
-        "url": true,
-        "required": {
-          "value": true
-        }
-      }
-    },
-    "score_threshold": {
-      "type": "number",
-      "ui": {
-        "widgetConfig": {}
-      },
+    "cuckoo_a1_url": {
       "rules": {
         "required": {
           "value": true
         },
-        "minimum": 0.0,
-        "maximum": 10.0
+        "url": true
+      },
+      "type": "string",
+      "ui": {
+        "columns": 8,
+        "widgetConfig": {}
+      }
+    },
+    "cuckoo_a2_key": {
+      "rules": {
+        "required": {
+          "value": true
+        }
+      },
+      "type": "string",
+      "ui": {
+        "columns": 4,
+        "widgetConfig": {}
+      }
+    },
+    "cuckoo_b1_package": {
+      "rules": {},
+      "type": "string",
+      "ui": {
+        "columns": 4,
+        "widgetConfig": {
+          "autocomplete": {
+            "enumSource": [
+              {
+                "package": "default"
+              },
+              {
+                "package": "com"
+              },
+              {
+                "package": "cpl"
+              },
+              {
+                "package": "dll"
+              },
+              {
+                "package": "doc"
+              },
+              {
+                "package": "exec"
+              },
+              {
+                "package": "generic"
+              },
+              {
+                "package": "ie"
+              },
+              {
+                "package": "ff"
+              },
+              {
+                "package": "jar"
+              },
+              {
+                "package": "js"
+              },
+              {
+                "package": "jse"
+              },
+              {
+                "package": "hta"
+              },
+              {
+                "package": "hwp"
+              },
+              {
+                "package": "msi"
+              },
+              {
+                "package": "pdf"
+              },
+              {
+                "package": "ppt"
+              },
+              {
+                "package": "ps1"
+              },
+              {
+                "package": "pub"
+              },
+              {
+                "package": "python"
+              },
+              {
+                "package": "vbs"
+              },
+              {
+                "package": "wsf"
+              },
+              {
+                "package": "xls"
+              },
+              {
+                "package": "zip"
+              }
+            ],
+            "immediateShow": true,
+            "itemTemplate": "\u003cspan\u003e{{item.package}}\u003c/span\u003e",
+            "itemValueField": "package"
+          }
+        }
+      }
+    },
+    "cuckoo_b2_package_options": {
+      "rules": {},
+      "type": "string",
+      "ui": {
+        "columns": 4,
+        "widgetConfig": {}
+      }
+    },
+    "cuckoo_b3_priority": {
+      "rules": {
+        "maximum": 3,
+        "minimum": 1
+      },
+      "type": "integer",
+      "ui": {
+        "columns": 4,
+        "widget": "radio",
+        "widgetConfig": {
+          "enumSource": [
+            {
+              "label": "Low",
+              "value": 1
+            },
+            {
+              "label": "Mid",
+              "value": 2
+            },
+            {
+              "label": "High",
+              "value": 3
+            }
+          ]
+        }
+      }
+    },
+    "cuckoo_c1_platform": {
+      "rules": {},
+      "type": "string",
+      "ui": {
+        "columns": 4,
+        "widgetConfig": {
+          "autocomplete": {
+            "enumSource": [
+              {
+                "platform": "windows"
+              },
+              {
+                "platform": "darwin"
+              },
+              {
+                "platform": "linux"
+              }
+            ],
+            "immediateShow": true,
+            "itemTemplate": "\u003cspan\u003e{{item.platform}}\u003c/span\u003e",
+            "itemValueField": "platform"
+          }
+        }
+      }
+    },
+    "cuckoo_c2_machine": {
+      "rules": {},
+      "type": "string",
+      "ui": {
+        "columns": 4,
+        "widgetConfig": {}
+      }
+    },
+    "cuckoo_c3_timeout": {
+      "rules": {},
+      "type": "number",
+      "ui": {
+        "columns": 4,
+        "widgetConfig": {}
+      }
+    },
+    "score_threshold": {
+      "rules": {
+        "maximum": 10,
+        "minimum": 0,
+        "required": {
+          "value": true
+        }
+      },
+      "type": "number",
+      "ui": {
+        "widgetConfig": {}
       }
     }
   },
-  "required": ["cuckoo_key", "cuckoo_url", "score_threshold"],
+  "required": ["cuckoo_a2_key", "cuckoo_a1_url", "score_threshold"],
   "type": "object"
 }

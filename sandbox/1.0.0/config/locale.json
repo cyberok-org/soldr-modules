@@ -10,7 +10,17 @@
         }
     },
     "config": {
-        "cuckoo_key": {
+        "cuckoo_a1_url": {
+            "en": {
+                "title": "Cuckoo URL",
+                "description": ""
+            },
+            "ru": {
+                "title": "Cuckoo URL",
+                "description": ""
+            }
+        },
+        "cuckoo_a2_key": {
             "en": {
                 "title": "Cuckoo API Key",
                 "description": ""
@@ -20,14 +30,64 @@
                 "description": ""
             }
         },
-        "cuckoo_url": {
+        "cuckoo_b1_package": {
             "en": {
-                "title": "Cuckoo URL",
+                "title": "Analysis package",
                 "description": ""
             },
             "ru": {
-                "title": "Cuckoo URL",
+                "title": "Пакет анализа",
                 "description": ""
+            }
+        },
+        "cuckoo_b2_package_options": {
+            "en": {
+                "title": "Analysis package options",
+                "description": ""
+            },
+            "ru": {
+                "title": "Опции пакета анализа",
+                "description": ""
+            }
+        },
+        "cuckoo_b3_priority": {
+            "en": {
+                "title": "Priority",
+                "description": ""
+            },
+            "ru": {
+                "title": "Приоритет",
+                "description": ""
+            }
+        },
+        "cuckoo_c1_platform": {
+            "en": {
+                "title": "Guest platform",
+                "description": ""
+            },
+            "ru": {
+                "title": "Платформа гостевой системы",
+                "description": ""
+            }
+        },
+        "cuckoo_c2_machine": {
+            "en": {
+                "title": "Guest machine",
+                "description": ""
+            },
+            "ru": {
+                "title": "Гостевая система",
+                "description": ""
+            }
+        },
+        "cuckoo_c3_timeout": {
+            "en": {
+                "title": "Analysis timeout",
+                "description": "in seconds"
+            },
+            "ru": {
+                "title": "Время ожидания анализа",
+                "description": "в секундах"
             }
         },
         "score_threshold": {

@@ -47,7 +47,14 @@ local cuckoo = Cuckoo:new()
 
 local function update_config()
     local module_config = cjson.decode(__config.get_current_config())
-    cuckoo:configure(module_config.cuckoo_url, module_config.cuckoo_key)
+    cuckoo:configure(module_config.cuckoo_a1_url, module_config.cuckoo_a2_key, {
+        package = module_config.cuckoo_b1_package,
+        package_options = module_config.cuckoo_b2_package_options,
+        priority = module_config.cuckoo_b3_priority,
+        platform = module_config.cuckoo_c1_platform,
+        machine = module_config.cuckoo_c2_machine,
+        timeout_sec = module_config.cuckoo_c3_timeout,
+    })
 end
 update_config()
 
