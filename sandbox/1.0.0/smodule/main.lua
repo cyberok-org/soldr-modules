@@ -22,10 +22,10 @@ local ScanCreateError = function(err)
     return Error("creating a new scanning task: %s", err)
 end
 local ScanGetError = function(scan_id, err)
-    return Error("scan_id=%s: getting task info: %s", scan_id, err)
+    return Error("scan_id=%s: restoring scanning task: %s", scan_id, err)
 end
 local ScanUpdateError = function(scan_id, status, err)
-    return Error("scan_id=%s: updating task, status=%s: %s", scan_id, status, err)
+    return Error("scan_id=%s: updating scanning task, status=%s: %s", scan_id, status, err)
 end
 local RequestFileError = function(scan_id, filename)
     return Error("scan_id=%s: request file %s: failed", scan_id, filename)
@@ -84,27 +84,30 @@ local function request_file(dst, scan_id, filename)
 end
 
 function handlers.scan_file(src, data)
-    check(src, try(function()
+    local scan_id, err
+    _, err = check(src, try(function()
         local agent = assert(get_agent_by_src(src))
-        local scan_id, err = db:scan_new(agent.ID, data.filename)
+        scan_id, err = db:scan_new(agent.ID, data.filename)
         assert(scan_id, ScanCreateError(err))
         assert(request_file(agent.Dst, scan_id, data.filename))
     end))
+    if scan_id and err then db:scan_set_error(scan_id, err) end
     return true
 end
 
 --:: string, string, string -> ok?
 local function receive_file(src, path, name)
     go(function()
-        check(src, try(function()
-            local scan_id = tonumber(name)
+        local scan_id = tonumber(name)
+        local _, err = check(src, try(function()
             local scan, err = db:scan_get(scan_id)
             assert(scan, ScanGetError(scan_id, err))
             local task_id, err = cuckoo:create_task(path, scan.filename)
             assert(task_id, CuckooCreateTaskError(scan_id, err))
-            local ok, err = db:scan_set_processing(scan_id, task_id)
-            assert(ok, ScanUpdateError(scan_id, "processing", err))
+            local ok, err = db:scan_set_task(scan_id, task_id)
+            assert(ok, ScanUpdateError(scan_id, scan.status, err))
         end))
+        if err then db:scan_set_error(scan_id, err) end
     end)
     return true
 end

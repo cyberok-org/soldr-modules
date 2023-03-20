@@ -6,7 +6,10 @@ CREATE TABLE IF NOT EXISTS scan (
     scan_id  INTEGER PRIMARY KEY,
     agent_id TEXT    NOT NULL,
     filename TEXT    NOT NULL,
-    status   TEXT    NOT NULL DEFAULT 'new', -- enum: new, processing
+
+    -- Enum: new, error, pending, running, completed, reported
+    status TEXT NOT NULL DEFAULT 'new',
+    error  TEXT,
 
     cuckoo_task_id INTEGER,
 
@@ -33,6 +36,15 @@ local function with_prepare(db, sql, func)
         stmt:finalize()
         return table.unpack(result)
     end)
+end
+
+--:: sqlite3.DB|Stmt -> {column_1: value_1, ...}
+local function get_named_values(db)
+    local row = {}
+    for i = 1, db:columns() do
+        row[db:get_name(i-1)] = db:get_value(i-1)
+    end
+    return row
 end
 
 -- DB stores the state of scanning tasks.
@@ -68,18 +80,12 @@ end
 --:: ScanRow :: {scan_id, agent_id, filename, status, ...}
 --:: integer -> ScanRow?, error?
 function DB:scan_get(scan_id)
-    return with_prepare(self._db, [[
-        SELECT scan_id, agent_id, filename, status, cuckoo_task_id, created_at, updated_at
-          FROM scan
-         WHERE scan_id=?1;
-    ]], function(stmt)
+    return with_prepare(self._db, [[ SELECT * FROM scan WHERE scan_id=?1 ]], function(stmt)
         stmt[1] = scan_id
-        if not stmt() then
-            return nil, "not found" end
-        local r = {}
-        r.scan_id, r.agent_id, r.filename, r.status, r.cuckoo_task_id, r.created_at, r.updated_at
-            = table.unpack(stmt:get_values())
-        return r
+        for _ in stmt:rows() do
+            return get_named_values(stmt)
+        end
+        return nil, "not found"
     end)
 end
 
@@ -96,16 +102,25 @@ function DB:scan_new(agent_id, filename, now)
     end)
 end
 
--- Updates status of the scanning task: status=processing.
---:: integer, string, integer? -> boolean, error?
-function DB:scan_set_processing(scan_id, cuckoo_task_id, now)
+-- Complements the scanning task with scanning process details.
+--:: integer, integer, integer? -> boolean, error?
+function DB:scan_set_task(scan_id, cuckoo_task_id, now)
     return with_prepare(self._db, [[
-        UPDATE scan SET status='processing', cuckoo_task_id=?2, updated_at=?3
-         WHERE scan_id=?1
+        UPDATE scan SET cuckoo_task_id=?2, updated_at=?3 WHERE scan_id=?1
     ]], function(stmt)
         stmt[1], stmt[2], stmt[3] = scan_id, cuckoo_task_id, DB.datetime(now)
-        stmt()
-        return true
+        return stmt() == false
+    end)
+end
+
+-- Updates status of the scanning task: status=error.
+--:: integer, error, integer? -> boolean, error?
+function DB:scan_set_error(scan_id, err, now)
+    return with_prepare(self._db, [[
+        UPDATE scan SET status='error', error=?2, updated_at=?3 WHERE scan_id=?1
+    ]], function(stmt)
+        stmt[1], stmt[2], stmt[3] = scan_id, tostring(err), DB.datetime(now)
+        return stmt() == false
     end)
 end
 

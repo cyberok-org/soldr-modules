@@ -53,10 +53,10 @@ describe("DB", function()
     describe("scan_get", function()
         it("should return info about the requested scanning task", function()
             assert(query(db_, [[
-            INSERT INTO scan (scan_id, agent_id, filename, status, cuckoo_task_id, created_at, updated_at)
+            INSERT INTO scan (scan_id, agent_id, filename, status, error, cuckoo_task_id, created_at, updated_at)
             VALUES
-                (10, 'Agent10', 'File10', 'new',        100, "CreatedAt10", "UpdatedAt10"),
-                (20, 'Agent20', 'File20', 'processing', 200, "CreatedAt20", "UpdatedAt20");
+                (10, 'Agent10', 'File10', 'new',   NULL,      100, "CreatedAt10", "UpdatedAt10"),
+                (20, 'Agent20', 'File20', 'error', 'Error20', 200, "CreatedAt20", "UpdatedAt20");
             ]]))
             assert.same({
                 scan_id        = 10,
@@ -71,7 +71,8 @@ describe("DB", function()
                 scan_id        = 20,
                 agent_id       = "Agent20",
                 filename       = "File20",
-                status         = "processing",
+                status         = "error",
+                error          = "Error20",
                 cuckoo_task_id = 200,
                 created_at     = "CreatedAt20",
                 updated_at     = "UpdatedAt20",
@@ -107,19 +108,34 @@ describe("DB", function()
         end)
     end)
 
-    describe("scan_set_processing", function()
-        it("should udpate status of the scanning task", function()
+    describe("scan_set_task", function()
+        it("should enrich the scanning task with additional info", function()
             local scan_id = assert(db:scan_new("Agent", "filename"))
-            assert(db:scan_set_processing(scan_id, "TaskID", 10))
+            assert(db:scan_set_task(scan_id, 100, 10))
 
             local task = assert(db:scan_get(scan_id))
-            assert.same("processing", task.status)
-            assert.same("TaskID", task.cuckoo_task_id)
+            assert.same(100, task.cuckoo_task_id)
             assert.same(DB.datetime(10), task.updated_at)
         end)
 
         test("given scanning task does not exist", function()
-            assert(db:scan_set_processing("MISSING", "TaskID"))
+            assert(db:scan_set_task("MISSING", 100))
+        end)
+    end)
+
+    describe("scan_set_error", function()
+        it("should udpate status of the scanning task", function()
+            local scan_id = assert(db:scan_new("Agent", "filename"))
+            assert(db:scan_set_error(scan_id, "ERROR", 10))
+
+            local task = assert(db:scan_get(scan_id))
+            assert.same("error", task.status)
+            assert.same("ERROR", task.error)
+            assert.same(DB.datetime(10), task.updated_at)
+        end)
+
+        test("given scanning task does not exist", function()
+            assert(db:scan_set_error("MISSING", "ERROR"))
         end)
     end)
 
