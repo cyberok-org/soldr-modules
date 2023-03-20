@@ -51,7 +51,7 @@ describe("DB", function()
     end)
 
     describe("scan_get", function()
-        it("should return info about the requested scanning task", function()
+        it("returns info about the requested scanning task", function()
             assert(query(db_, [[
             INSERT INTO scan (scan_id, agent_id, filename, status, error, cuckoo_task_id, created_at, updated_at)
             VALUES
@@ -80,9 +80,32 @@ describe("DB", function()
         end)
 
         test("requested scanning task not found", function()
-            local row, err = db:scan_get("UNKNOWN")
-            assert.is_nil(row)
+            local scan, err = db:scan_get("UNKNOWN")
+            assert.is_nil(scan)
             assert.same("not found", err)
+        end)
+    end)
+
+    describe("scan_list_unfinished", function()
+        test("empty result", function()
+            local scans = assert(db:scan_list_unfinished())
+            assert.same({}, scans)
+        end)
+
+        it("returns a list of unfinished scanning tasks", function()
+            assert(query(db_, [[
+            INSERT INTO scan (scan_id, agent_id, filename, status) VALUES
+                (10, '', '', 'new'),
+                (20, '', '', 'pending'),
+                (30, '', '', 'running'),
+                (40, '', '', 'reported'),
+                (50, '', '', 'error');
+            ]]))
+            local scans = assert(db:scan_list_unfinished())
+            assert.same(3, #scans)
+            assert.same(10, scans[1].scan_id)
+            assert.same(20, scans[2].scan_id)
+            assert.same(30, scans[3].scan_id)
         end)
     end)
 
@@ -123,8 +146,23 @@ describe("DB", function()
         end)
     end)
 
+    describe("scan_set_status", function()
+        it("should update status of the scanning task", function()
+            local scan_id = assert(db:scan_new("Agent", "filename"))
+            assert(db:scan_set_status(scan_id, "STATUS", 10))
+
+            local task = assert(db:scan_get(scan_id))
+            assert.same("STATUS", task.status)
+            assert.same(DB.datetime(10), task.updated_at)
+        end)
+
+        test("given scanning task does not exist", function()
+            assert(db:scan_set_status("MISSING", "STATUS"))
+        end)
+    end)
+
     describe("scan_set_error", function()
-        it("should udpate status of the scanning task", function()
+        it("should update status of the scanning task", function()
             local scan_id = assert(db:scan_new("Agent", "filename"))
             assert(db:scan_set_error(scan_id, "ERROR", 10))
 

@@ -8,6 +8,9 @@ local MethodMap = require "mmap"
 local time      = require "time"
 local try       = require "try"
 
+local db
+local cuckoo = Cuckoo:new()
+
 local function check(dst, ...)
     local ok, err = ...; if not ok and err then
         __log.error(tostring(err))
@@ -22,10 +25,13 @@ local ScanCreateError = function(err)
     return Error("creating a new scanning task: %s", err)
 end
 local ScanGetError = function(scan_id, err)
-    return Error("scan_id=%s: restoring scanning task: %s", scan_id, err)
+    return Error("scan_id=%s: restoring the scanning task: %s", scan_id, err)
+end
+local ScanListUnfinishedError = function(err)
+    return Error("getting unfinished scanning tasks: %s", err)
 end
 local ScanUpdateError = function(scan_id, status, err)
-    return Error("scan_id=%s: updating scanning task, status=%s: %s", scan_id, status, err)
+    return Error("scan_id=%s: updating the scanning task, status=%s: %s", scan_id, status, err)
 end
 local RequestFileError = function(scan_id, filename)
     return Error("scan_id=%s: request file %s: failed", scan_id, filename)
@@ -33,30 +39,12 @@ end
 local CuckooCreateTaskError = function(scan_id, err)
     return Error("scan_id=%s: submit the task to Cuckoo: %s", scan_id, err)
 end
+local CuckooError = function(scan_id, err)
+   return Error("scan_id=%s: sending request to Cuckoo: %s", scan_id, err)
+end
 local ExecSQLError = function(err)
     return Error("exec SQL: %s", err)
 end
-
-local db, err = check(nil, DB.open("data/"..__pid..".cyberok_sandbox.db"))
-if err then
-    __api.await(-1)
-    return "success"
-end
-
-local cuckoo = Cuckoo:new()
-
-local function update_config()
-    local c = cjson.decode(__config.get_current_config())
-    cuckoo:configure(c.cuckoo_a1_url, c.cuckoo_a2_key, {
-        package         = c.cuckoo_b1_package,
-        package_options = c.cuckoo_b2_package_options,
-        priority        = c.cuckoo_b3_priority,
-        platform        = c.cuckoo_c1_platform,
-        machine         = c.cuckoo_c2_machine,
-        timeout_sec     = c.cuckoo_c3_timeout,
-    })
-end
-update_config()
 
 local handlers = MethodMap.new(function(src, data)
     data = cjson.decode(data)
@@ -129,14 +117,67 @@ function handlers.error(src, data)
     return true
 end
 
+local controls = MethodMap.new(function(cmtype) return cmtype end)
+controls.default = function() return true end
+
+function controls.update_config()
+    local c = cjson.decode(__config.get_current_config())
+    cuckoo:configure(c.cuckoo_a1_url, c.cuckoo_a2_key, {
+        package         = c.cuckoo_b1_package,
+        package_options = c.cuckoo_b2_package_options,
+        priority        = c.cuckoo_b3_priority,
+        platform        = c.cuckoo_c1_platform,
+        machine         = c.cuckoo_c2_machine,
+        timeout_sec     = c.cuckoo_c3_timeout,
+    })
+    return true
+end
+
+local function handle_unfinished_scan(scan)
+    return try(function()
+        -- TODO: handle the staled scanning task
+        if not scan.cuckoo_task_id then return true end
+
+        print("HANDLE SCAN:", scan.scan_id, scan.status, scan.cuckoo_task_id)
+        local status, err = cuckoo:task_status(scan.cuckoo_task_id)
+        print("STATUS:", status, err)
+        assert(status, CuckooError(scan.scan_id, err))
+        if scan.status == status then return true end
+
+        local ok, err = db:scan_set_status(scan.scan_id, status)
+        assert(ok, ScanUpdateError(scan.scan_id, status, err))
+        return true
+    end)
+end
+
+local WATCH_UNFINISHED_SCANS_INTERVAL = 10
+local function watch_unfinished_scans()
+    while true do
+        local scans, err = db:scan_list_unfinished()
+        check(nil, scans, ScanListUnfinishedError(err))
+        for _, scan in ipairs(scans or {}) do
+            check(scan.agent_id, handle_unfinished_scan(scan))
+        end
+        go.sleep(WATCH_UNFINISHED_SCANS_INTERVAL)
+    end
+end
+
+-- Module START ----------------------------------------------------------------
+
+db, err = check(nil, DB.open("data/"..__pid..".cyberok_sandbox.db"))
+if err then
+    __api.await(-1)
+    return "success"
+end
+
 __api.add_cbs {
     data    = handlers:as_function(),
     file    = receive_file,
-    control = function(cmtype, data)
-        if cmtype == "update_config" then update_config() end
-        return true
-    end,
+    control = controls:as_function(),
 }
+controls.update_config()
+
+go(watch_unfinished_scans)
 
 repeat
     local timeout = 0.100

@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS scan (
     agent_id TEXT    NOT NULL,
     filename TEXT    NOT NULL,
 
-    -- Enum: new, error, pending, running, completed, reported
+    -- enum: new, error, pending, running, completed, reported
     status TEXT NOT NULL DEFAULT 'new',
     error  TEXT,
 
@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS scan (
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, -- datetime: YYYY-MM-DD HH:MM:SS
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP  -- datetime: YYYY-MM-DD HH:MM:SS
 );
+CREATE INDEX IF NOT EXISTS status ON scan (status);
 ]]
 
 -- Apply migration onto the given database.
@@ -82,10 +83,22 @@ end
 function DB:scan_get(scan_id)
     return with_prepare(self._db, [[ SELECT * FROM scan WHERE scan_id=?1 ]], function(stmt)
         stmt[1] = scan_id
-        for _ in stmt:rows() do
-            return get_named_values(stmt)
-        end
+        while stmt() do
+            return get_named_values(stmt) end
         return nil, "not found"
+    end)
+end
+
+-- Returns a list of unfinished scanning tasks.
+--:: () -> [ScanRow], error?
+function DB:scan_list_unfinished()
+    return with_prepare(self._db, [[
+        SELECT * FROM scan WHERE status NOT IN ('reported', 'error');
+    ]], function(stmt)
+        local rows = {}
+        while stmt() do
+            table.insert(rows, get_named_values(stmt)) end
+        return rows
     end)
 end
 
@@ -113,7 +126,18 @@ function DB:scan_set_task(scan_id, cuckoo_task_id, now)
     end)
 end
 
--- Updates status of the scanning task: status=error.
+-- Updates status of the scanning task.
+--:: integer, string, integer? -> boolean, error?
+function DB:scan_set_status(scan_id, status, now)
+    return with_prepare(self._db, [[
+        UPDATE scan SET status=?2, updated_at=?3 WHERE scan_id=?1
+    ]], function(stmt)
+        stmt[1], stmt[2], stmt[3] = scan_id, status, DB.datetime(now)
+        return stmt() == false
+    end)
+end
+
+-- Updates status of the scanning task, status=error.
 --:: integer, error, integer? -> boolean, error?
 function DB:scan_set_error(scan_id, err, now)
     return with_prepare(self._db, [[

@@ -84,4 +84,9 @@ function Cuckoo:create_task(file, filename)
     end)
 end
 
+--:: integer -> string?, error?
+function Cuckoo:task_status(task_id)
+    return string.format("%06d", math.random(1e6))
+end
+
 return Cuckoo
