@@ -66,14 +66,14 @@ end
 
 -- Returns info about the requested scanning task.
 --:: ScanRow :: {scan_id, agent_id, filename, status, ...}
---:: string -> ScanRow?, error?
+--:: integer -> ScanRow?, error?
 function DB:scan_get(scan_id)
     return with_prepare(self._db, [[
-        SELECT CAST(scan_id AS TEXT), agent_id, filename, status, cuckoo_task_id, created_at, updated_at
+        SELECT scan_id, agent_id, filename, status, cuckoo_task_id, created_at, updated_at
           FROM scan
          WHERE scan_id=?1;
     ]], function(stmt)
-        stmt[1] = tonumber(scan_id)
+        stmt[1] = scan_id
         if not stmt() then
             return nil, "not found" end
         local r = {}
@@ -84,7 +84,7 @@ function DB:scan_get(scan_id)
 end
 
 -- Creates a new scanning task in the database.
---:: string, string, integer? -> scan_id::string?, error?
+--:: string, string, integer? -> scan_id::integer?, error?
 function DB:scan_new(agent_id, filename, now)
     return with_prepare(self._db, [[
         INSERT INTO scan (status, agent_id, filename, created_at, updated_at)
@@ -92,18 +92,18 @@ function DB:scan_new(agent_id, filename, now)
     ]], function(stmt)
         stmt[1], stmt[2], stmt[3] = agent_id, filename, DB.datetime(now)
         stmt()
-        return tostring(self._db:last_insert_rowid())
+        return self._db:last_insert_rowid()
     end)
 end
 
 -- Updates status of the scanning task: status=processing.
---:: string, string, integer? -> boolean, error?
+--:: integer, string, integer? -> boolean, error?
 function DB:scan_set_processing(scan_id, cuckoo_task_id, now)
     return with_prepare(self._db, [[
         UPDATE scan SET status='processing', cuckoo_task_id=?2, updated_at=?3
          WHERE scan_id=?1
     ]], function(stmt)
-        stmt[1], stmt[2], stmt[3] = tonumber(scan_id), cuckoo_task_id, DB.datetime(now)
+        stmt[1], stmt[2], stmt[3] = scan_id, cuckoo_task_id, DB.datetime(now)
         stmt()
         return true
     end)

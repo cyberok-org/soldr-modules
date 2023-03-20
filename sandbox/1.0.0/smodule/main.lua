@@ -97,7 +97,7 @@ end
 local function receive_file(src, path, name)
     go(function()
         check(src, try(function()
-            local scan_id = name
+            local scan_id = tonumber(name)
             local scan, err = db:scan_get(scan_id)
             assert(scan, ScanGetError(scan_id, err))
             local task_id, err = cuckoo:create_task(path, scan.filename)

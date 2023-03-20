@@ -43,7 +43,7 @@ function handlers.cyberok_sandbox_scan(src, data)
 end
 
 function handlers.request_file(src, data)
-    local name = data.scan_id
+    local name = tostring(data.scan_id)
     return __api.async_send_file_from_fs_to(src, data.filename, name, function(ok)
         check(ok, SendFileError(data.scan_id, data.filename))
     end)
