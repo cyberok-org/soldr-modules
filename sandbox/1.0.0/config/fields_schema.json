@@ -14,6 +14,13 @@
             "ui": {
                 "widgetConfig": {}
             }
+        },
+        "score": {
+            "rules": {},
+            "type": "number",
+            "ui": {
+                "widgetConfig": {}
+            }
         }
     },
     "required": [],

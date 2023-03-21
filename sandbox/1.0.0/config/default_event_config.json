@@ -1,18 +1,4 @@
 {
-    "cyberok_sandbox_verdict_suspicious": {
-        "actions": [
-            {
-                "fields": [],
-                "module_name": "this",
-                "name": "log_to_db",
-                "priority": 10
-            }
-        ],
-        "fields": [
-            "object.fullpath"
-        ],
-        "type": "atomic"
-    },
     "cyberok_sandbox_error": {
         "actions": [
             {
@@ -24,6 +10,29 @@
         ],
         "fields": [
             "message"
+        ],
+        "type": "atomic"
+    },
+    "cyberok_sandbox_verdict_clean": {
+        "actions": [],
+        "fields": [
+            "object.fullpath",
+            "score"
+        ],
+        "type": "atomic"
+    },
+    "cyberok_sandbox_verdict_suspicious": {
+        "actions": [
+            {
+                "fields": [],
+                "module_name": "this",
+                "name": "log_to_db",
+                "priority": 10
+            }
+        ],
+        "fields": [
+            "object.fullpath",
+            "score"
         ],
         "type": "atomic"
     }

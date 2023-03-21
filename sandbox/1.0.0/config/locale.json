@@ -122,6 +122,16 @@
                 "title": "object.fullpath",
                 "description": "Путь до файла"
             }
+        },
+        "score": {
+            "en": {
+                "title": "score",
+                "description": "Scanning result score"
+            },
+            "ru": {
+                "title": "score",
+                "description": "Оценка результата сканирования"
+            }
         }
     },
     "actions": {
@@ -137,16 +147,6 @@
         }
     },
     "events": {
-        "cyberok_sandbox_verdict_suspicious": {
-            "en": {
-                "title": "Scanning verdict: suspicious",
-                "description": "Cuckoo sandbox detected a suspicious file '{{[object.fullpath]}}'."
-            },
-            "ru": {
-                "title": "Вердикт сканирования: вредоносный.",
-                "description": "Песочница Cuckoo обнаружила вредоносный файл '{{[object.fullpath]}}'."
-            }
-        },
         "cyberok_sandbox_error": {
             "en": {
                 "title": "Error",
@@ -156,14 +156,35 @@
                 "title": "Ошибка",
                 "description": "В модуле произошла ошибка"
             }
+        },
+        "cyberok_sandbox_verdict_clean": {
+            "en": {
+                "title": "Scanning verdict: clean",
+                "description": "Cuckoo sandbox detected nothing suspicious in a file "
+            },
+            "ru": {
+                "title": "Вердикт сканирования: чистый",
+                "description": "Песочница Cuckoo не обнаружила ничего подозрительного в файле"
+            }
+        },
+        "cyberok_sandbox_verdict_suspicious": {
+            "en": {
+                "title": "Scanning verdict: suspicious",
+                "description": "Cuckoo sandbox detected a suspicious file"
+            },
+            "ru": {
+                "title": "Вердикт сканирования: подозрительный",
+                "description": "Песочница Cuckoo обнаружила подозрительный файл"
+            }
         }
     },
     "action_config": {
         "cyberok_sandbox_scan": {}
     },
     "event_config": {
-        "cyberok_sandbox_verdict_suspicious": {},
-        "cyberok_sandbox_error": {}
+        "cyberok_sandbox_error": {},
+        "cyberok_sandbox_verdict_clean": {},
+        "cyberok_sandbox_verdict_suspicious": {}
     },
     "tags": {}
 }

@@ -1,35 +1,6 @@
 {
     "additionalProperties": false,
     "properties": {
-        "cyberok_sandbox_verdict_suspicious": {
-            "allOf": [
-                {
-                    "$ref": "#/definitions/events.atomic"
-                },
-                {
-                    "properties": {
-                        "fields": {
-                            "default": [
-                                "object.fullpath"
-                            ],
-                            "items": {
-                                "enum": [
-                                    "object.fullpath"
-                                ],
-                                "type": "string"
-                            },
-                            "maxItems": 1,
-                            "minItems": 1,
-                            "type": "array"
-                        }
-                    },
-                    "required": [
-                        "fields"
-                    ],
-                    "type": "object"
-                }
-            ]
-        },
         "cyberok_sandbox_error": {
             "allOf": [
                 {
@@ -58,11 +29,74 @@
                     "type": "object"
                 }
             ]
+        },
+        "cyberok_sandbox_verdict_clean": {
+            "allOf": [
+                {
+                    "$ref": "#/definitions/events.atomic"
+                },
+                {
+                    "properties": {
+                        "fields": {
+                            "default": [
+                                "object.fullpath",
+                                "score"
+                            ],
+                            "items": {
+                                "enum": [
+                                    "object.fullpath",
+                                    "score"
+                                ],
+                                "type": "string"
+                            },
+                            "maxItems": 2,
+                            "minItems": 2,
+                            "type": "array"
+                        }
+                    },
+                    "required": [
+                        "fields"
+                    ],
+                    "type": "object"
+                }
+            ]
+        },
+        "cyberok_sandbox_verdict_suspicious": {
+            "allOf": [
+                {
+                    "$ref": "#/definitions/events.atomic"
+                },
+                {
+                    "properties": {
+                        "fields": {
+                            "default": [
+                                "object.fullpath",
+                                "score"
+                            ],
+                            "items": {
+                                "enum": [
+                                    "object.fullpath",
+                                    "score"
+                                ],
+                                "type": "string"
+                            },
+                            "maxItems": 2,
+                            "minItems": 2,
+                            "type": "array"
+                        }
+                    },
+                    "required": [
+                        "fields"
+                    ],
+                    "type": "object"
+                }
+            ]
         }
     },
     "required": [
         "cyberok_sandbox_error",
-        "cyberok_sandbox_verdict_suspicious"
+        "cyberok_sandbox_verdict_suspicious",
+        "cyberok_sandbox_verdict_clean"
     ],
     "type": "object"
 }
