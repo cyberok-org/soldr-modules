@@ -26,9 +26,9 @@ local function push_event(name, data)
     if result then action_engine:exec(__aid, list) end
 end
 
--- Used to emit "cyberok_sandbox_verdict_malware" event.
-function M.verdict_malware(filename, score)
-    push_event("cyberok_sandbox_verdict_malware", {
+-- Used to emit "cyberok_sandbox_verdict_suspicious" event.
+function M.verdict_suspicious(filename, score)
+    push_event("cyberok_sandbox_verdict_suspicious", {
         ["object.fullpath"] = filename,
         ["score"]           = score,
     })

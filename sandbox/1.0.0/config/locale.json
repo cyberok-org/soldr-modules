@@ -137,10 +137,10 @@
         }
     },
     "events": {
-        "cyberok_sandbox_verdict_malware": {
+        "cyberok_sandbox_verdict_suspicious": {
             "en": {
-                "title": "Scanning verdict: malicious",
-                "description": "Cuckoo sandbox detected a malicious file '{{[object.fullpath]}}'."
+                "title": "Scanning verdict: suspicious",
+                "description": "Cuckoo sandbox detected a suspicious file '{{[object.fullpath]}}'."
             },
             "ru": {
                 "title": "Вердикт сканирования: вредоносный.",
@@ -162,7 +162,7 @@
         "cyberok_sandbox_scan": {}
     },
     "event_config": {
-        "cyberok_sandbox_verdict_malware": {},
+        "cyberok_sandbox_verdict_suspicious": {},
         "cyberok_sandbox_error": {}
     },
     "tags": {}

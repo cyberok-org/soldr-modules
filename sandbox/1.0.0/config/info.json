@@ -25,7 +25,7 @@
     ],
     "events": [
         "cyberok_sandbox_error",
-        "cyberok_sandbox_verdict_malware"
+        "cyberok_sandbox_verdict_suspicious"
     ],
     "fields": [
         "object.fullpath",

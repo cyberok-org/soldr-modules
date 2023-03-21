@@ -53,7 +53,7 @@ end
 
 function handlers.verdict(src, data)
     if data.score >= score_threshold then
-        event.verdict_malware(data.filename, data.score)
+        event.verdict_suspicious(data.filename, data.score)
     end
     return true
 end
