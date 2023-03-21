@@ -37,15 +37,18 @@
             {{ locale[$i18n.locale]["buttonExecSQL"] }}
           </el-button>
         </p>
-        <el-table border table-layout="auto" :data="tableData">
-          <el-table-column
-            v-for="(col, i) in tableColumns"
-            :key="i"
-            :prop="col.name"
-            :label="col.name"
-            sortable
-          />
-        </el-table>
+        <div ref="boxTable" style="flex-grow: 1">
+          <el-table border :max-height="maxTableHeight" :data="tableData">
+            <el-table-column
+              v-for="(col, i) in tableColumns"
+              :key="i"
+              :prop="col.name"
+              :label="col.name"
+              :width="col.width"
+              sortable
+            />
+          </el-table>
+        </div>
       </el-tab-pane>
     </el-tabs>
   </div>
@@ -62,6 +65,8 @@
       filename: "",
       sqlQuery: "SELECT * FROM scan",
       results: undefined,
+      maxTableHeight: 585,
+      timerId: undefined,
       connection: undefined,
       locale: {
         ru: {
@@ -106,6 +111,8 @@
       }
       this.protoAPI.connect().then(
         (connection) => {
+          window.addEventListener("resize", this.resizeTable);
+          this.timerId = window.setInterval(this.resizeTable, 100);
           const date = new Date().toLocaleTimeString();
           this.connection = connection;
           this.connection.subscribe(this.onData, "data");
@@ -121,6 +128,13 @@
         }
       );
     },
+    destroyed() {
+      if (this.viewMode != "agent") {
+        return;
+      }
+      window.removeEventListener("resize", this.resizeTable);
+      window.clearInterval(this.timerId);
+    },
     mounted() {
       this.leftTab = this.viewMode === "agent" ? "api" : undefined;
     },
@@ -134,7 +148,16 @@
       },
       tableColumns() {
         if (!this.results || this.results.length < 1) return [];
-        return this.results[0].map((c) => ({ name: c }));
+        return this.results[0].map((c, i) => ({
+          name: c,
+          width: this.results.reduce((acc, row) => {
+            const paddingPx = 40;
+            const charWidthPx = 8.7;
+            const cellLength = (row[i] || "null").toString().length;
+            const cellWidth = cellLength * charWidthPx + paddingPx;
+            return Math.max(acc, cellWidth);
+          }, 0),
+        }));
       },
     },
     methods: {
@@ -170,6 +193,9 @@
         this.$root.NotificationsService.success(
           this.locale[this.$i18n.locale]["scanRequestLoading"]
         );
+      },
+      resizeTable() {
+        this.maxTableHeight = this.$refs.boxTable.clientHeight - 1;
       },
     },
   };
