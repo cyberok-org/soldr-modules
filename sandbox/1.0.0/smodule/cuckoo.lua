@@ -91,4 +91,9 @@ function Cuckoo:task_status(task_id)
     return string.format("%06d", math.random(1e6))
 end
 
+--:: integer -> number?, error?
+function Cuckoo:task_score(task_id)
+    return math.random() * 10
+end
+
 return Cuckoo

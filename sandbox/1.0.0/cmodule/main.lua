@@ -3,6 +3,8 @@ local Error     = require "error"
 local event     = require "event"
 local MethodMap = require "mmap"
 
+local score_threshold
+
 local function check(...)
     local ok, err = ...; if not ok and err then
         __log.error(tostring(err))
@@ -49,6 +51,13 @@ function handlers.request_file(src, data)
     end)
 end
 
+function handlers.verdict(src, data)
+    if data.score >= score_threshold then
+        event.verdict_malware(data.filename, data.score)
+    end
+    return true
+end
+
 function handlers.error(src, data)
     local err = Error.from_data(data)
     __log.error(tostring(err))
@@ -60,6 +69,8 @@ local controls = MethodMap.new(function(cmtype) return cmtype end)
 controls.default = function() return true end
 
 function controls.update_config()
+    local c = cjson.decode(__config.get_current_config())
+    score_threshold = c.d1_score_threshold
     event.update_config()
     return true
 end

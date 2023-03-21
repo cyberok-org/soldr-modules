@@ -52,9 +52,11 @@ local handlers = MethodMap.new(function(src, data)
     return data.type, src, data
 end)
 
+-- Search for the agent with ID/Dst == `dst`.
 --:: string, string? -> AgentInfo?, error?
-local function get_agent_by_src(src, type)
-    local id = __agents.dump()[src].ID
+local function get_agent(dst, type)
+    local agent = __agents.dump()[dst]
+    local id = agent and agent.ID or dst
     for _, agent in pairs(__agents.get_by_id(id)) do
         if tostring(agent.Type) == (type or "VXAgent") then
             return agent
@@ -75,7 +77,7 @@ end
 function handlers.scan_file(src, data)
     local scan_id, err
     _, err = check(src, try(function()
-        local agent = assert(get_agent_by_src(src))
+        local agent = assert(get_agent(src))
         scan_id, err = db:scan_new(agent.ID, data.filename)
         assert(scan_id, ScanCreateError(err))
         assert(request_file(agent.Dst, scan_id, data.filename))
@@ -131,20 +133,33 @@ function controls.update_config()
         machine  = c.c2_cuckoo_machine,
         timeout  = c.c3_cuckoo_timeout,
     })
-
     return true
+end
+
+local function send_verdict(dst, filename, score)
+    __api.send_data_to(dst, cjson.encode{
+        type = "verdict", filename = filename, score = score })
 end
 
 local function handle_unfinished_scan(scan)
     return try(function()
         -- TODO: handle the staled scanning task
+
+        -- Skip new scanning tasks while receiving a file.
         if not scan.cuckoo_task_id then return true end
 
-        print("HANDLE SCAN:", scan.scan_id, scan.status, scan.cuckoo_task_id)
         local status, err = cuckoo:task_status(scan.cuckoo_task_id)
-        print("STATUS:", status, err)
         assert(status, CuckooError(scan.scan_id, err))
         if scan.status == status then return true end
+
+        if status == "reported" then
+            local score, err = cuckoo:task_score(scan.scan_id)
+            assert(status, CuckooError(scan_id, err))
+
+            local agent = get_agent(scan.agent_id); if agent then
+                send_verdict(agent.Dst, scan.filename, score)
+            end
+        end
 
         local ok, err = db:scan_set_status(scan.scan_id, status)
         assert(ok, ScanUpdateError(scan.scan_id, status, err))
