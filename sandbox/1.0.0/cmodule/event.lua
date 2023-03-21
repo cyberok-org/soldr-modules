@@ -34,6 +34,14 @@ function M.verdict_suspicious(filename, score)
     })
 end
 
+-- Used to emit "cyberok_sandbox_verdict_clean" event.
+function M.verdict_clean(filename, score)
+    push_event("cyberok_sandbox_verdict_clean", {
+        ["object.fullpath"] = filename,
+        ["score"]           = score,
+    })
+end
+
 -- Used to emit "cyberok_sandbox_error" event.
 function M.error(err)
     push_event("cyberok_sandbox_error", {

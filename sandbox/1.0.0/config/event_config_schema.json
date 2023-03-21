@@ -95,8 +95,8 @@
     },
     "required": [
         "cyberok_sandbox_error",
-        "cyberok_sandbox_verdict_suspicious",
-        "cyberok_sandbox_verdict_clean"
+        "cyberok_sandbox_verdict_clean",
+        "cyberok_sandbox_verdict_suspicious"
     ],
     "type": "object"
 }

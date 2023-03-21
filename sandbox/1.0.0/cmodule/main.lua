@@ -52,7 +52,9 @@ function handlers.request_file(src, data)
 end
 
 function handlers.verdict(src, data)
-    if data.score >= score_threshold then
+    if data.score < score_threshold then
+        event.verdict_clean(data.filename, data.score)
+    else
         event.verdict_suspicious(data.filename, data.score)
     end
     return true
