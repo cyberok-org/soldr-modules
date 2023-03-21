@@ -56,18 +56,22 @@ function handlers.error(src, data)
     return true
 end
 
-local function update_config()
+local controls = MethodMap.new(function(cmtype) return cmtype end)
+controls.default = function() return true end
+
+function controls.update_config()
     event.update_config()
+    return true
 end
-update_config()
+
+-- Module START ----------------------------------------------------------------
 
 __api.add_cbs {
     action  = handlers:as_function(),
     data    = handlers:as_function(),
-    control = function(cmtype, data)
-        if cmtype == "update_config" then update_config() end
-        return true
-    end,
+    control = controls:as_function(),
 }
+controls.update_config()
+
 __api.await(-1)
 return "success"

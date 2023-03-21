@@ -10,8 +10,7 @@ function MethodMap.new(mapper)
     return setmetatable({ _map = mapper }, MethodMap)
 end
 
-function MethodMap.default(...)
-end
+function MethodMap.default(...) end
 
 function MethodMap:__call(...)
     local args = table.pack(self._map(...))

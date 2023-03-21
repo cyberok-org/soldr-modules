@@ -77,6 +77,7 @@
           unknownMessageError: "Получен неизвестный тип сообщения",
           AgentNotAvailableError: "Не удалось подключиться к агенту",
           CuckooCreateTaskError: "Сервер Cuckoo не доступен / вернул ошибку",
+          CuckooError: "Сервер Cuckoo не доступен / вернул ошибку",
           ExecSQLError: "Ошибка выполнения SQL-запроса",
           RequestFileError: "Нe удалось получить файл",
           ScanCreateError: "Не удалось создать новую запись в базе данных",
