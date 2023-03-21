@@ -36,25 +36,16 @@ function Error.from_data(data)
     end
 end
 
--- Search for the agent with ID/Dst == `dst`.
-local function find_agent_id(dst)
-    for _, agent in pairs(__agents.dump()) do
-        if agent.ID == dst or agent.Dst == dst then
-            return agent.ID
-        end
-    end
-end
-
 -- Sends `err` to the agents identified by ID/Dst == `dst`.
 --:: AgentType :: "VXAgent" | "Browser"
 --:: string, error, AgentType? -> ()
 function Error.forward(dst, err, type)
-    local id = find_agent_id(dst); if id then
-        for _, agent in pairs(__agents.get_by_id(id)) do
-            if not type or tostring(agent.Type) == type then
-                local data = Error.into_data(err)
-                __api.send_data_to(agent.Dst, cjson.encode(data))
-            end
+    local agent = __agents.dump()[dst]
+    local id = agent and agent.ID or dst
+    for _, agent in pairs(__agents.get_by_id(id)) do
+        if not type or tostring(agent.Type) == type then
+            local data = Error.into_data(err)
+            __api.send_data_to(agent.Dst, cjson.encode(data))
         end
     end
 end
