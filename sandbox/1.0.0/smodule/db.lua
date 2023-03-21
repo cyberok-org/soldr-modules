@@ -1,4 +1,4 @@
-local sqlite3 = require "lsqlite3"
+local sqlite3 = require "lsqlite3_fix"
 local try     = require "try"
 
 local MIGRATE_SQL = [[

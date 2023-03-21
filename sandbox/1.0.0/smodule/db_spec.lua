@@ -1,5 +1,5 @@
 local DB      = require "db"
-local sqlite3 = require "lsqlite3"
+local sqlite3 = require "lsqlite3_fix"
 local try     = require "try"
 
 local function with_prepare(db, sql, func)
@@ -16,7 +16,7 @@ local function query(db, sql, ...)
     return with_prepare(db, sql, function(stmt)
         stmt:bind_values(table.unpack(values))
         local rows = {}
-        for row in stmt:rows(sql) do
+        for row in stmt:rows() do
             table.insert(rows, row) end
         return rows
     end)
