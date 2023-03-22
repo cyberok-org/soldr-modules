@@ -115,6 +115,8 @@ end
 
 function handlers.error(src, data)
     local err = Error.from_data(data)
+    if err.scan_id then
+        db:scan_set_error(err.scan_id, err) end
     __log.error(tostring(err))
     Error.forward(src, err, "Browser")
     return true

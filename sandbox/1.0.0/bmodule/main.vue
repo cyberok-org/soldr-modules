@@ -171,8 +171,8 @@
         } else if (msg.type == "show_sql_rows") {
           this.results = msg.data;
         } else if (msg.type == "error") {
-          const localized = this.locale[this.$i18n.locale][msg.name];
-          const message = localized || `[${msg.name}] ${msg.message}`;
+          const localized = this.locale[this.$i18n.locale][msg.error.name];
+          const message = localized || `[${msg.error.name}] ${msg.error.message}`;
           this.$root.NotificationsService.error(message);
         } else {
           this.$root.NotificationsService.error(
