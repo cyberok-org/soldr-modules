@@ -179,6 +179,12 @@ local function watch_unfinished_scans()
     end
 end
 
+-- Returns time remains before `deadline`; `0` if the deadline has passed.
+local function till(deadline)
+    local delta = deadline - time.clock()
+    return delta > 0 and delta or 0
+end
+
 -- Module START ----------------------------------------------------------------
 
 db, err = check(nil, DB.open("data/"..__pid..".cyberok_sandbox.db"))
@@ -197,14 +203,10 @@ controls.update_config()
 go(watch_unfinished_scans)
 
 repeat
-    local timeout = 0.100
-    local deadline = time.clock() + timeout
-
+    local deadline = time.clock() + 0.100
     check(nil, go:resume())
-    check(nil, courl:wait(timeout))
-
-    local remains = deadline - time.clock()
-    __api.await(math.max(1, remains*1000))
+    check(nil, courl:wait(till(deadline)))
+    __api.await(till(deadline) * 1000)
 until __api.is_close() and courl:idle()
 
 check(nil, db:close())

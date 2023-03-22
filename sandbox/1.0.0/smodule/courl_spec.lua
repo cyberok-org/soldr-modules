@@ -8,7 +8,7 @@ local try   = require "try"
 local API = "https://httpbingo.org"
 -- local API = "http://127.0.0.173"
 
-local function with_handle(func)
+local function with_curl(func)
     local h = curl.easy()
     local result = table.pack(try(func, h))
     h:close()
@@ -17,7 +17,7 @@ end
 
 local function request(url, setup)
     local body = ""
-    return with_handle(function(h)
+    return with_curl(function(h)
         h:set("URL", url)
         h:set("WRITEFUNCTION", function(buf, size)
             body = body .. ffi.string(buf, size)
