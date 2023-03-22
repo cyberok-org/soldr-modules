@@ -154,7 +154,7 @@ local function handle_unfinished_scan(scan)
 
         if status == "reported" then
             local score, err = cuckoo:task_score(scan.scan_id)
-            assert(status, CuckooError(scan_id, err))
+            assert(status, CuckooError(scan.scan_id, err))
 
             local agent = get_agent(scan.agent_id); if agent then
                 send_verdict(agent.Dst, scan.filename, score)

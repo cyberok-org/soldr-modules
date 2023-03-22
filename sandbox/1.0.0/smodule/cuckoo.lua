@@ -86,9 +86,34 @@ function Cuckoo:create_task(file, filename)
     end)
 end
 
---:: integer -> string?, error?
+---@alias task_status
+---| '"pending"' # The task has been created and is awaiting execution
+---| '"running"' # The task is currently running
+---| '"completed"' # The task has been completed, and the report is preparing
+---| '"reported"' # The report has been prepared and is ready to be received
+
+---returns the current status of the task with the specified `task_id`.
+---@param task_id integer
+---@return task_status? # The current state of task completion
+---@return string? # Error message if any
 function Cuckoo:task_status(task_id)
-    return string.format("%06d", math.random(1e6))
+    return with_curl(function(h)
+        h:set("URL", string.format("%s/tasks/view/%d", self.base_url, task_id))
+        h:set("HTTPHEADER", { "Authorization: Bearer " .. self.api_key })
+
+        local body = ""
+        h:set("WRITEFUNCTION", function(buf, size)
+            body = body .. ffi.string(buf, size)
+            return size
+        end)
+
+        assert(courl:perform(h))
+        local code = h:info("RESPONSE_CODE")
+        assert(code == 200, string.format("got unexpected response code %d", code))
+
+        local view = cjson.decode(body)
+        return view.task.status
+    end)
 end
 
 --:: integer -> number?, error?
