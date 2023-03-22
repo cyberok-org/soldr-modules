@@ -92,7 +92,7 @@ end
 ---| '"completed"' # The task has been completed, and the report is preparing
 ---| '"reported"' # The report has been prepared and is ready to be received
 
----returns the current status of the task with the specified `task_id`.
+---Returns the current status of the task with the specified `task_id`.
 ---@param task_id integer
 ---@return task_status? # The current state of task completion
 ---@return string? # Error message if any
@@ -116,9 +116,28 @@ function Cuckoo:task_status(task_id)
     end)
 end
 
---:: integer -> number?, error?
+---Returns the file maliciousness score for the task with the specified `task_id`.
+---@param task_id integer
+---@return number? # The file maliciousness score[0;10]
+---@return number? # Error message if any
 function Cuckoo:task_score(task_id)
-    return math.random() * 10
+    return with_curl(function(h)
+        h:set("URL", string.format("%s/tasks/summary/%d", self.base_url, task_id))
+        h:set("HTTPHEADER", { "Authorization: Bearer " .. self.api_key })
+
+        local body = ""
+        h:set("WRITEFUNCTION", function(buf, size)
+            body = body .. ffi.string(buf, size)
+            return size
+        end)
+
+        assert(courl:perform(h))
+        local code = h:info("RESPONSE_CODE")
+        assert(code == 200, string.format("got unexpected response code %d", code))
+
+        local summary = cjson.decode(body)
+        return summary.info.score
+    end)
 end
 
 return Cuckoo
