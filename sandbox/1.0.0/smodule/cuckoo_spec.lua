@@ -30,20 +30,19 @@ describe("cuckoo:create_task #network", function()
             machine  = "cuckoo1",
             timeout  = 10,
         })
-        local id, err
+        local id
         go(function()
-            id, err = cuckoo:create_task("/usr/bin/bash", "/usr/bin/bash")
+            id = assert(cuckoo:create_task("/usr/bin/bash", "/usr/bin:with/bash"))
         end)
         wait()
-        assert.is_nil(err)
-        assert.are.not_equal(0, id)
+
+        assert.are.same("number", type(id))
 
         local status
         go(function()
-            status, err = cuckoo:task_status(id)
+            status = assert(cuckoo:task_status(id))
         end)
         wait()
-        assert.is_nil(err)
         assert.are.equal("pending", status)
     end)
 end)

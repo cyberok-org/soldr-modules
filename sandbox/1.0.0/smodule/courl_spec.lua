@@ -66,7 +66,7 @@ describe("CoURL #network", function()
     test("connection error", function()
         local ok, err
         go(function()
-            ok, err = request("http://0.0.0.0") end)
+            ok, err = request("http://255.255.255.255") end)
         wait()
         assert(not ok)
         assert.equal("Couldn't connect to server", tostring(err))

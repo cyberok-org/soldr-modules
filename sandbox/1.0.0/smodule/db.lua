@@ -11,9 +11,8 @@ CREATE TABLE IF NOT EXISTS scan (
     status TEXT NOT NULL DEFAULT 'new',
     error  TEXT,
 
-    report TEXT,
-
     cuckoo_task_id INTEGER,
+    report TEXT,
 
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, -- datetime: YYYY-MM-DD HH:MM:SS
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP  -- datetime: YYYY-MM-DD HH:MM:SS
