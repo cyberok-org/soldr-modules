@@ -164,11 +164,7 @@
       onData(packet) {
         const data = new TextDecoder("utf-8").decode(packet.content.data);
         const msg = JSON.parse(data);
-        if (msg.type == "connection_error") {
-          this.$root.NotificationsService.error(
-            this.locale[this.$i18n.locale]["connAgentError"]
-          );
-        } else if (msg.type == "show_sql_rows") {
+        if (msg.type == "show_sql_rows") {
           this.results = msg.data;
         } else if (msg.type == "error") {
           const localized = this.locale[this.$i18n.locale][msg.error.name];
