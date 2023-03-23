@@ -17,9 +17,8 @@ local ServerNotAvailableError = function()
     return Error("server is not available")
 end
 local SendFileError = function(scan_id, filename)
-    local err = Error("scan_id=%s: send file %s: failed", scan_id, filename)
-    err.scan_id = scan_id
-    return err
+    return Error("scan_id=%s: send file %s: failed", scan_id, filename)
+        :with{ scan_id = scan_id }
 end
 
 --:: () -> string?, error?

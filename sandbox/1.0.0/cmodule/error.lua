@@ -36,6 +36,11 @@ function mt:__call(...) return Error.new(...) end
 
 function Error:__tostring() return self.message end
 
+function Error:with(params)
+    for k, v in pairs(params) do self[k] = v end
+    return self
+end
+
 --:: error -> {type: "error", error: {...}}
 function Error.into_data(err)
     if getmetatable(err) ~= Error then
