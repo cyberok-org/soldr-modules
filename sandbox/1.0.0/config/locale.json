@@ -43,11 +43,11 @@
         "b2_cuckoo_package_options": {
             "en": {
                 "title": "Analysis package options",
-                "description": ""
+                "description": "key1=value,key2=value"
             },
             "ru": {
                 "title": "Опции пакета анализа",
-                "description": ""
+                "description": "ключ1=значение,ключ2=значение"
             }
         },
         "b3_cuckoo_priority": {
