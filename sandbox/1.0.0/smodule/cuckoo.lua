@@ -1,8 +1,9 @@
-local cjson = require "cjson.safe"
-local courl = require "courl"
-local curl  = require "libcurl"
-local ffi   = require "ffi"
-local try   = require "try"
+local cjson  = require "cjson.safe"
+local courl  = require "courl"
+local curl   = require "libcurl"
+local ffi    = require "ffi"
+local try    = require "try"
+local uri    = require "uri"
 
 ---@class CuckooOptions
 ---@field public package string Analysis package to be used for the analysis
@@ -49,10 +50,10 @@ end
 --:: SetupFn :: libcurl.CURL -> ()
 --:: string, SetupFn? -> {...}?, error?
 function Cuckoo:request(resource, setup)
-    return with_curl( function(h)
+    return with_curl(function(h)
         h:set("URL", self.base_url .. resource)
         h:set("HTTPHEADER", {
-            "Authorization: Bearer " .. self.api_key})
+            "Authorization: Bearer " .. self.api_key })
         local body = ""
         h:set("WRITEFUNCTION", function(buf, size)
             body = body .. ffi.string(buf, size)
@@ -63,8 +64,7 @@ function Cuckoo:request(resource, setup)
         assert(courl:perform(h))
 
         local code = h:info("RESPONSE_CODE")
-        assert(code == 200,
-            string.format("received unexpected response code: %d", code))
+        assert(code == 200, string.format("received unexpected response code: %d", code))
 
         local data, err = cjson.decode(body)
         assert(data, string.format("parse a reponse as json: %s", err))
@@ -88,7 +88,7 @@ function Cuckoo:create_task(file, filename)
             part:filename(filename or "file")
             -- Provide the analysis options:
             for param, value in pairs(self.opts) do
-                local part = mime:part()
+                part = mime:part()
                 part:name(param)
                 part:data(tostring(value))
             end
@@ -110,7 +110,7 @@ end
 ---@return string? # Error message if any
 function Cuckoo:task_status(task_id)
     return try(function()
-        local data = assert(self:request("/tasks/view/"..task_id))
+        local data = assert(self:request("/tasks/view/" .. task_id))
         return data.task.status
     end)
 end
@@ -118,12 +118,22 @@ end
 ---Returns the file maliciousness score for the task with the specified `task_id`.
 ---@param task_id integer
 ---@return number? # The file maliciousness score[0;10]
----@return number? # Error message if any
+---@return string? # Error message if any
 function Cuckoo:task_score(task_id)
     return try(function()
-        local data = assert(self:request("/tasks/summary/"..task_id))
+        local data = assert(self:request("/tasks/summary/" .. task_id))
         return data.info.score
     end)
+end
+
+---Returns URL to the report for the task with the specified `task_id`
+---@param task_id integer
+---@return string
+function Cuckoo:task_report_url(task_id)
+    local report = uri.parse(self.base_url)
+    report.port = nil
+    report.path = string.format("/analysis/%d/summary", task_id)
+    return uri.format(report)
 end
 
 return Cuckoo

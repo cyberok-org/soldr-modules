@@ -11,6 +11,8 @@ CREATE TABLE IF NOT EXISTS scan (
     status TEXT NOT NULL DEFAULT 'new',
     error  TEXT,
 
+    report TEXT,
+
     cuckoo_task_id INTEGER,
 
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, -- datetime: YYYY-MM-DD HH:MM:SS
@@ -168,6 +170,21 @@ function DB:select(sql)
             table.insert(rows, row)
         end
         return rows
+    end)
+end
+
+---Sets report URL for the scan task with the specified `scan_id`
+---@param scan_id integer
+---@param report_url string
+---@param now integer
+---@return boolean? # whether the request was successful or not
+---@return string? #Error message if any
+function DB:scan_set_report_url(scan_id, report_url, now)
+    return with_prepare(self._db, [[
+        UPDATE scan SET report=?2, updated_at=?3 WHERE scan_id=?1
+    ]], function(stmt)
+        stmt[1], stmt[2], stmt[3] = scan_id, report_url, DB.datetime(now)
+        return stmt() == false
     end)
 end
 

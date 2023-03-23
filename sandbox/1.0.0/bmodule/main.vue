@@ -112,7 +112,7 @@
       this.protoAPI.connect().then(
         (connection) => {
           window.addEventListener("resize", this.resizeTable);
-          this.timerId = window.setInterval(this.resizeTable, 100);
+          this.timerId = window.setInterval(this.resizeTable, 500);
           const date = new Date().toLocaleTimeString();
           this.connection = connection;
           this.connection.subscribe(this.onData, "data");

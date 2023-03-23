@@ -47,3 +47,13 @@ describe("cuckoo:create_task #network", function()
         assert.are.equal("pending", status)
     end)
 end)
+
+describe("cuckoo:task_report_url", function()
+    it("returns url to report for task with the specified id", function()
+        local cuckoo = Cuckoo:new("http://cuckoo.com:8090", "AWFKI9LcPk_Y5i0pcA6XKA")
+
+        local report_url = cuckoo:task_report_url(100)
+
+        assert.are.equal("http://cuckoo.com/analysis/100/summary", report_url)
+    end)
+end)

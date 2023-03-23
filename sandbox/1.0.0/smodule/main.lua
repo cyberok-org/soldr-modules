@@ -34,6 +34,9 @@ end
 local ScanUpdateError = function(scan_id, status, err)
     return Error("scan_id=%s: updating the scanning task, status=%s: %s", scan_id, status, err)
 end
+local ScanSetReportError = function(scan_id, report_url, err)
+    return Error("scan_id=%s: setting the report url, report_url=%s: %s", scan_id, report_url, err)
+end
 local RequestFileError = function(scan_id, filename)
     return Error("scan_id=%s: request file %s: failed", scan_id, filename)
 end
@@ -162,10 +165,15 @@ local function handle_unfinished_scan(scan)
             local agent = get_agent(scan.agent_id); if agent then
                 send_verdict(agent.Dst, scan.filename, score)
             end
+
+            local report_url = cuckoo:task_report_url(scan.cuckoo_task_id)
+            local ok, err = db:scan_set_report_url(scan.scan_id, report_url)
+            assert(ok, ScanSetReportError(scan.scan_id, report_url, err))
         end
 
         local ok, err = db:scan_set_status(scan.scan_id, status)
         assert(ok, ScanUpdateError(scan.scan_id, status, err))
+
         return true
     end)
 end
