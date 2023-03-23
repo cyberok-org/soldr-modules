@@ -1,17 +1,17 @@
-Request scanning from another module {
+Request scanning by a browser {
+	shape: sequence_diagram
+	browser; server; agent
+	server.a <- browser: scan_file\n(filename) {style.bold: true}
+	server.a -> agent.a: request_file
+	server <- agent.a: receive_file
+}
+
+Request scanning by another module {
 	shape: sequence_diagram
 	module; server; agent
 	agent.a <- module: cyberok_sandbox_scan\n(object.fullpath)
-	server.a <- agent.a: scan_file\n(path) {style.bold: true}
-	server.a -> agent: notify/error\n(type,message)
-	server -> agent: error\n(type,message)
+	server.a <- agent.a: scan_file\n(filename) {style.bold: true}
+	server.a -> agent.b: request_file
+	server <- agent.b: receive_file
 	module: another\nmodule
-}
-
-Request scanning from a browser {
-	shape: sequence_diagram
-	browser; server; agent
-	server.a <- browser: scan_file\n(path) {style.bold: true}
-	server.a -> browser: notify/error\n(type,message)
-	server -> agent: error\n(type,message)
 }
