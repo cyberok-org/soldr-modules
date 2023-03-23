@@ -8,7 +8,7 @@ local function fname(...)
     for _, name in ipairs{...} do except[name] = true end
     for l = 2,10 do
         local info = debug.getinfo(l, "n")
-        if not except[info.name] then return info.name end
+        if info and not except[info.name] then return info.name end
     end
 end
 
