@@ -1,8 +1,8 @@
-local courl  = require "courl"
-local curl   = require "libcurl"
-local cjson  = require "cjson"
-local try    = require "try"
-local ffi    = require "ffi"
+local cjson = require "cjson.safe"
+local courl = require "courl"
+local curl  = require "libcurl"
+local ffi   = require "ffi"
+local try   = require "try"
 
 ---@class CuckooOptions
 ---@field public package string Analysis package to be used for the analysis
@@ -42,47 +42,59 @@ local function with_curl(func)
     return table.unpack(result)
 end
 
+-- Does a request to Cuckoo API. To customize a CURL handle, that will be using
+-- during the request, a caller can provide `setup` function.
+-- Returns a reponse decoded from JSON returned by the API. The function ensures
+-- that the API responded with HTTP 200 OK, otherwise an error will be returned.
+--:: SetupFn :: libcurl.CURL -> ()
+--:: string, SetupFn? -> {...}?, error?
+function Cuckoo:request(resource, setup)
+    return with_curl( function(h)
+        h:set("URL", self.base_url .. resource)
+        h:set("HTTPHEADER", {
+            "Authorization: Bearer " .. self.api_key})
+        local body = ""
+        h:set("WRITEFUNCTION", function(buf, size)
+            body = body .. ffi.string(buf, size)
+            return size
+        end)
+        if setup then setup(h) end
+
+        assert(courl:perform(h))
+
+        local code = h:info("RESPONSE_CODE")
+        assert(code == 200,
+            string.format("received unexpected response code: %d", code))
+
+        local data, err = cjson.decode(body)
+        assert(data, string.format("parse a reponse as json: %s", err))
+        return data
+    end)
+end
+
 ---Creates a task to analyze a file named `filename` in Cuckoo
 ---@param file string
 ---@param filename? string
 ---@return integer? # Cuckoo's task id
 ---@return string? # Error message if any
 function Cuckoo:create_task(file, filename)
-    return with_curl(function(h)
-        h:set("URL", self.base_url .. "/tasks/create/file")
-        h:set("HTTPHEADER", {
-            "Authorization: Bearer " .. self.api_key
-        })
-
-        local mime = h:mime()
-
-        local part = mime:part()
-        part:name("file")
-        part:file(file)
-        if filename then
-            part:filename(filename)
-        end
-
-        for param, value in pairs(self.opts) do
-            part = mime:part()
-            part:name(param)
-            part:data(tostring(value))
-        end
-
-        h:set("MIMEPOST", mime)
-
-        local body = ""
-        h:set("WRITEFUNCTION", function(buf, size)
-            body = body .. ffi.string(buf, size)
-            return size
-        end)
-
-        assert(courl:perform(h))
-        local code = h:info("RESPONSE_CODE")
-        assert(code == 200, string.format("got unexpected response code %d", code))
-
-        local task = cjson.decode(body)
-        return task.task_id
+    return try(function()
+        local data = assert(self:request("/tasks/create/file", function(h)
+            local mime = h:mime()
+            -- Provide the file (with the filename):
+            local part = mime:part()
+            part:name("file")
+            part:file(file)
+            part:filename(filename or "file")
+            -- Provide the analysis options:
+            for param, value in pairs(self.opts) do
+                local part = mime:part()
+                part:name(param)
+                part:data(tostring(value))
+            end
+            h:set("MIMEPOST", mime)
+        end))
+        return data.task_id
     end)
 end
 
@@ -97,22 +109,9 @@ end
 ---@return task_status? # The current state of task completion
 ---@return string? # Error message if any
 function Cuckoo:task_status(task_id)
-    return with_curl(function(h)
-        h:set("URL", string.format("%s/tasks/view/%d", self.base_url, task_id))
-        h:set("HTTPHEADER", { "Authorization: Bearer " .. self.api_key })
-
-        local body = ""
-        h:set("WRITEFUNCTION", function(buf, size)
-            body = body .. ffi.string(buf, size)
-            return size
-        end)
-
-        assert(courl:perform(h))
-        local code = h:info("RESPONSE_CODE")
-        assert(code == 200, string.format("got unexpected response code %d", code))
-
-        local view = cjson.decode(body)
-        return view.task.status
+    return try(function()
+        local data = assert(self:request("/tasks/view/"..task_id))
+        return data.task.status
     end)
 end
 
@@ -121,22 +120,9 @@ end
 ---@return number? # The file maliciousness score[0;10]
 ---@return number? # Error message if any
 function Cuckoo:task_score(task_id)
-    return with_curl(function(h)
-        h:set("URL", string.format("%s/tasks/summary/%d", self.base_url, task_id))
-        h:set("HTTPHEADER", { "Authorization: Bearer " .. self.api_key })
-
-        local body = ""
-        h:set("WRITEFUNCTION", function(buf, size)
-            body = body .. ffi.string(buf, size)
-            return size
-        end)
-
-        assert(courl:perform(h))
-        local code = h:info("RESPONSE_CODE")
-        assert(code == 200, string.format("got unexpected response code %d", code))
-
-        local summary = cjson.decode(body)
-        return summary.info.score
+    return try(function()
+        local data = assert(self:request("/tasks/summary/"..task_id))
+        return data.info.score
     end)
 end
 
