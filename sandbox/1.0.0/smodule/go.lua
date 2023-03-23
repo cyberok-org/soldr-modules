@@ -15,7 +15,7 @@ function Go:__call(func)
     self.coroutines[co] = {}
 end
 
---:: () -> boolean, err::string?
+--:: () -> boolean, error?
 function Go:resume()
     for co in pairs(self.coroutines) do
         local ok, err = coroutine.resume(co)
@@ -32,7 +32,7 @@ function Go:idle()
     return next(self.coroutines) == nil
 end
 
---:: () -> boolean, err::string?
+--:: () -> boolean, error?
 function Go:wait()
     while not self:idle() do
         local ok, err = self:resume(); if not ok then

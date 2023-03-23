@@ -77,7 +77,7 @@ function DB.datetime(now)
     return os.date("!%F %T", now)
 end
 
--- Returns info about the requested scanning task.
+-- Returns info about the scanning task specified by `scan_id`.
 --:: ScanRow :: {scan_id, agent_id, filename, status, ...}
 --:: integer -> ScanRow?, error?
 function DB:scan_get(scan_id)

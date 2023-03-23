@@ -37,7 +37,7 @@ describe("Error", function()
         local data = Error.into_data(err)
         assert.same({
             type = "error",
-            error = { name="Error", message="Message", foo=123 },
+            error = {name="Error", message="Message", foo=123},
         }, data)
         local res = Error.from_data(data)
         assert.same(err, res)
@@ -47,7 +47,7 @@ describe("Error", function()
         local data = Error.into_data("Message")
         assert.same({
             type = "error",
-            error = { message="Message" },
+            error = {message="Message"},
         }, data)
         local res = Error.from_data(data)
         assert.same("Message", tostring(res))

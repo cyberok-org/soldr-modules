@@ -12,7 +12,7 @@ function CoURL.new()
     return setmetatable(self, CoURL)
 end
 
---:: libcurl.CURL -> boolean, err::string?
+--:: libcurl.CURL -> boolean, error?
 function CoURL:perform(h)
     local context = {}
     self._multi:add(h)
@@ -24,7 +24,7 @@ function CoURL:perform(h)
     return context.ok, context.err
 end
 
---:: () -> boolean, err::string?
+--:: () -> boolean, error?
 function CoURL:resume()
     local ok, err = self._multi:perform()
     if not ok then
@@ -40,7 +40,7 @@ function CoURL:resume()
     return true
 end
 
---:: seconds? -> boolean, err::string?
+--:: seconds? -> boolean, error?
 function CoURL:wait(timeout)
     local timeout = timeout or 1e6
     local deadline = time.clock() + timeout

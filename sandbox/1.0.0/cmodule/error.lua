@@ -36,7 +36,7 @@ function mt:__call(...) return Error.new(...) end
 
 function Error:__tostring() return self.message end
 
---:: error -> {type: "error", ...}
+--:: error -> {type: "error", error: {...}}
 function Error.into_data(err)
     if getmetatable(err) ~= Error then
         err = Error{ message = tostring(err) }
@@ -44,7 +44,7 @@ function Error.into_data(err)
     return { type = "error", error = err }
 end
 
---:: {type: "error", ...} -> Error?
+--:: {type: "error", error: {...}} -> Error?
 function Error.from_data(data)
     if data.type == "error" then
         return Error(data.error)
