@@ -99,6 +99,7 @@ local function receive_file(src, path, name)
             assert(ok, ScanUpdateError(scan_id, scan.status, err))
         end))
         if err then db:scan_set_error(scan_id, err) end
+        check(nil, os.remove(path))
     end)
     return true
 end
