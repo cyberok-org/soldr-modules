@@ -53,10 +53,10 @@ describe("DB", function()
     describe("scan_get", function()
         it("returns info about the requested scanning task", function()
             assert(query(db_, [[
-            INSERT INTO scan (scan_id, agent_id, filename, status, error, cuckoo_task_id, created_at, updated_at)
+            INSERT INTO scan (scan_id, agent_id, filename, status, error, cuckoo_task_id, cuckoo_options, created_at, updated_at)
             VALUES
-                (10, 'Agent10', 'File10', 'new',   NULL,      100, "CreatedAt10", "UpdatedAt10"),
-                (20, 'Agent20', 'File20', 'error', 'Error20', 200, "CreatedAt20", "UpdatedAt20");
+                (10, 'Agent10', 'File10', 'new',   NULL,      100, '{}',        "CreatedAt10", "UpdatedAt10"),
+                (20, 'Agent20', 'File20', 'error', 'Error20', 200, '{"Two":2}', "CreatedAt20", "UpdatedAt20");
             ]]))
             assert.same({
                 scan_id        = 10,
@@ -64,6 +64,7 @@ describe("DB", function()
                 filename       = "File10",
                 status         = "new",
                 cuckoo_task_id = 100,
+                cuckoo_options = {},
                 created_at     = "CreatedAt10",
                 updated_at     = "UpdatedAt10",
             }, assert(db:scan_get(10)))
@@ -74,6 +75,7 @@ describe("DB", function()
                 status         = "error",
                 error          = "Error20",
                 cuckoo_task_id = 200,
+                cuckoo_options = {Two=2},
                 created_at     = "CreatedAt20",
                 updated_at     = "UpdatedAt20",
             }, assert(db:scan_get(20)))
@@ -114,20 +116,20 @@ describe("DB", function()
             local now = os.time()
             local now_dt = DB.datetime(now)
 
-            local scan_id = assert(db:scan_new("Agent10", "File10", now))
+            local scan_id = assert(db:scan_new("Agent10", "File10", {One=1}, now))
             assert.same(1, scan_id)
 
-            local scan_id = assert(db:scan_new("Agent20", "File20", now))
+            local scan_id = assert(db:scan_new("Agent20", "File20", {Two=2}, now))
             assert.same(2, scan_id)
 
             local rows = assert(query(db_, [[
-                SELECT status, agent_id, filename, created_at, updated_at
+                SELECT status, agent_id, filename, cuckoo_options, created_at, updated_at
                   FROM scan
                  ORDER BY scan_id;
             ]]))
             assert.same(2, #rows)
-            assert.same({"new", "Agent10", "File10", now_dt, now_dt}, rows[1])
-            assert.same({"new", "Agent20", "File20", now_dt, now_dt}, rows[2])
+            assert.same({"new", "Agent10", "File10", '{"One":1}', now_dt, now_dt}, rows[1])
+            assert.same({"new", "Agent20", "File20", '{"Two":2}', now_dt, now_dt}, rows[2])
         end)
     end)
 

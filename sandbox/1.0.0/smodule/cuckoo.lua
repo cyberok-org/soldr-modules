@@ -16,20 +16,17 @@ local uri    = require "uri"
 ---@class Cuckoo
 ---@field private base_url string
 ---@field private api_key string
----@field private opts? CuckooOptions
 local Cuckoo = {}
 
 ---Creates new Cuckoo API instance
 ---@param url string
 ---@param key string
----@param opts? CuckooOptions
 ---@return Cuckoo
-function Cuckoo:new(url, key, opts)
+function Cuckoo:new(url, key)
     ---@type Cuckoo
     local o = {
         base_url = url,
         api_key = key,
-        opts = opts or {},
     }
     setmetatable(o, self)
     self.__index = self
@@ -74,10 +71,11 @@ end
 
 ---Creates a task to analyze a file named `filename` in Cuckoo
 ---@param file string
----@param filename? string
+---@param filename string
+---@param options CuckooOptions
 ---@return integer? # Cuckoo's task id
 ---@return string? # Error message if any
-function Cuckoo:create_task(file, filename)
+function Cuckoo:create_task(file, filename, options)
     return try(function()
         local data = assert(self:request("/tasks/create/file", function(h)
             local mime = h:mime()
@@ -87,9 +85,9 @@ function Cuckoo:create_task(file, filename)
             part:file(file)
             part:filename(filename or "file")
             -- Provide the analysis options:
-            for param, value in pairs(self.opts) do
+            for name, value in pairs(options) do
                 part = mime:part()
-                part:name(param)
+                part:name(name)
                 part:data(tostring(value))
             end
             h:set("MIMEPOST", mime)

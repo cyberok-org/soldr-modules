@@ -11,6 +11,7 @@ local try       = require "try"
 local db
 ---@type Cuckoo
 local cuckoo
+local cuckoo_options
 
 local function check(dst, ...)
     local ok, err = ...; if not ok and err then
@@ -78,7 +79,8 @@ function handlers.scan_file(src, data)
     local scan_id, err
     _, err = check(src, try(function()
         local agent = assert(get_agent(src))
-        scan_id, err = db:scan_new(agent.ID, data.filename)
+        local options = data.cuckoo_options or cuckoo_options
+        scan_id, err = db:scan_new(agent.ID, data.filename, options)
         assert(scan_id, ScanCreateError(err))
         assert(request_file(agent.Dst, scan_id, data.filename))
     end))
@@ -93,7 +95,7 @@ local function receive_file(src, path, name)
         local _, err = check(src, try(function()
             local scan, err = db:scan_get(scan_id)
             assert(scan, ScanGetError(scan_id, err))
-            local task_id, err = cuckoo:create_task(path, scan.filename)
+            local task_id, err = cuckoo:create_task(path, scan.filename, scan.cuckoo_options)
             assert(task_id, CuckooCreateTaskError(scan_id, err))
             local ok, err = db:scan_set_task(scan_id, task_id)
             assert(ok, ScanUpdateError(scan_id, scan.status, err))
@@ -128,14 +130,15 @@ controls.default = function() return true end
 
 function controls.update_config()
     local c = cjson.decode(__config.get_current_config())
-    cuckoo = Cuckoo:new(c.a1_cuckoo_url, c.a2_cuckoo_key, {
+    cuckoo = Cuckoo:new(c.a1_cuckoo_url, c.a2_cuckoo_key)
+    cuckoo_options = {
         package  = c.b1_cuckoo_package,
         options  = c.b2_cuckoo_package_options,
         priority = c.b3_cuckoo_priority,
         platform = c.c1_cuckoo_platform,
         machine  = c.c2_cuckoo_machine,
         timeout  = c.c3_cuckoo_timeout,
-    })
+    }
     return true
 end
 

@@ -14,7 +14,7 @@ describe("cuckoo:create_task #network", function()
         local cuckoo = Cuckoo:new("http://cuckoo.invalid", "AWFKI9LcPk_Y5i0pcA6XKA")
         local ok, err
         go(function()
-            ok, err = cuckoo:create_task("/usr/bin/bash")
+            ok, err = cuckoo:create_task("/usr/bin/bash", "bash", {})
         end)
         wait()
         assert.is_nil(ok)

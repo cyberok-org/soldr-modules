@@ -1,3 +1,4 @@
+local cjson   = require "cjson.safe"
 local sqlite3 = require "lsqlite3_fix"
 local try     = require "try"
 
@@ -12,7 +13,8 @@ CREATE TABLE IF NOT EXISTS scan (
     error  TEXT,
 
     cuckoo_task_id INTEGER,
-    report TEXT,
+    cuckoo_options TEXT     NOT NULL DEFAULT '{}', -- JSON-encoded CuckooOptions
+    report         TEXT,
 
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, -- datetime: YYYY-MM-DD HH:MM:SS
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP  -- datetime: YYYY-MM-DD HH:MM:SS
@@ -85,7 +87,10 @@ function DB:scan_get(scan_id)
     return with_prepare(self._db, [[ SELECT * FROM scan WHERE scan_id=?1 ]], function(stmt)
         stmt[1] = scan_id
         while stmt() do
-            return get_named_values(stmt) end
+            local scan = get_named_values(stmt)
+            scan.cuckoo_options = assert(cjson.decode(scan.cuckoo_options))
+            return scan
+        end
         return nil, "not found"
     end)
 end
@@ -104,13 +109,16 @@ function DB:scan_list_unfinished()
 end
 
 -- Creates a new scanning task in the database.
---:: string, string, integer? -> scan_id::integer?, error?
-function DB:scan_new(agent_id, filename, now)
+--:: string, string, CuckooOptions, integer? -> scan_id::integer?, error?
+function DB:scan_new(agent_id, filename, cuckoo_options, now)
     return with_prepare(self._db, [[
-        INSERT INTO scan (status, agent_id, filename, created_at, updated_at)
-        VALUES ('new', ?1, ?2, ?3, ?3);
+        INSERT INTO scan (status, agent_id, filename, cuckoo_options, created_at, updated_at)
+        VALUES ('new', ?1, ?2, ?3, ?4, ?4);
     ]], function(stmt)
-        stmt[1], stmt[2], stmt[3] = agent_id, filename, DB.datetime(now)
+        stmt[1] = agent_id
+        stmt[2] = filename
+        stmt[3] = cjson.encode(cuckoo_options)
+        stmt[4] = DB.datetime(now)
         stmt()
         return self._db:last_insert_rowid()
     end)
