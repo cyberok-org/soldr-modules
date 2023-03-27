@@ -14,7 +14,8 @@ CREATE TABLE IF NOT EXISTS scan (
 
     cuckoo_task_id INTEGER,
     cuckoo_options TEXT     NOT NULL DEFAULT '{}', -- JSON-encoded CuckooOptions
-    report         TEXT,
+    report         TEXT,                           -- JSON-encoded report
+    report_url     TEXT,
 
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, -- datetime: YYYY-MM-DD HH:MM:SS
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP  -- datetime: YYYY-MM-DD HH:MM:SS
@@ -157,6 +158,24 @@ function DB:scan_set_error(scan_id, err, now)
     end)
 end
 
+---Save a scanning report and a corresponding link in Cuckoo of the scanning task.
+---@param scan_id integer
+---@param report_url string
+---@param now integer
+---@return boolean? # whether the request was successful or not
+---@return string? #Error message if any
+function DB:scan_set_report(scan_id, report, report_url, now)
+    return with_prepare(self._db, [[
+        UPDATE scan SET report=?2, report_url=?3, updated_at=?4 WHERE scan_id=?1
+    ]], function(stmt)
+        stmt[1] = scan_id
+        stmt[2] = cjson.encode(report)
+        stmt[3] = report_url
+        stmt[4] = DB.datetime(now)
+        return stmt() == false
+    end)
+end
+
 -- Executes the given SQL-query on the database.
 -- Returns result rows as the table:
 -- {
@@ -177,21 +196,6 @@ function DB:select(sql)
             table.insert(rows, row)
         end
         return rows
-    end)
-end
-
----Sets report URL for the scan task with the specified `scan_id`
----@param scan_id integer
----@param report_url string
----@param now integer
----@return boolean? # whether the request was successful or not
----@return string? #Error message if any
-function DB:scan_set_report_url(scan_id, report_url, now)
-    return with_prepare(self._db, [[
-        UPDATE scan SET report=?2, updated_at=?3 WHERE scan_id=?1
-    ]], function(stmt)
-        stmt[1], stmt[2], stmt[3] = scan_id, report_url, DB.datetime(now)
-        return stmt() == false
     end)
 end
 

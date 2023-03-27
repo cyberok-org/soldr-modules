@@ -144,7 +144,7 @@ end
 
 local function send_verdict(dst, filename, score, report)
     __api.send_data_to(dst, cjson.encode{
-        type = "verdict", filename = filename, score = score, report = "report" })
+        type = "verdict", filename = filename, score = score, report = report })
 end
 
 local function handle_unfinished_scan(scan)
@@ -159,17 +159,16 @@ local function handle_unfinished_scan(scan)
         if scan.status == status then return true end
 
         if status == "reported" then
-            local report, err = cuckoo:task_result()
-            assert(score, CuckooError(scan.scan_id, err))
+            local report, err = cuckoo:task_report(scan.cuckoo_task_id)
+            assert(report, CuckooError(scan.scan_id, err))
+            local report_url = cuckoo:task_report_url(scan.cuckoo_task_id)
+            local ok, err = db:scan_set_report(scan.scan_id, report, report_url)
+            assert(ok, ScanUpdateError(scan.scan_id, status, err))
 
             local agent = get_agent(scan.agent_id); if agent then
                 local score = Cuckoo.score(report)
                 send_verdict(agent.Dst, scan.filename, score, report)
             end
-
-            local report_url = cuckoo:task_report_url(scan.cuckoo_task_id)
-            local ok, err = db:scan_set_report_url(scan.scan_id, report_url)
-            assert(ok, ScanUpdateError(scan.scan_id, status, err))
         end
 
         local ok, err = db:scan_set_status(scan.scan_id, status)

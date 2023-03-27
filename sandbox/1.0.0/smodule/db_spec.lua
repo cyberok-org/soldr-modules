@@ -179,6 +179,22 @@ describe("DB", function()
         end)
     end)
 
+    describe("scan_set_report", function()
+        it("should update report of the scanning task", function()
+            local scan_id = assert(db:scan_new("Agent", "filename"))
+            assert(db:scan_set_report(scan_id, {report="Report"}, "ReportURL", 10))
+
+            local task = assert(db:scan_get(scan_id))
+            assert.same('{"report":"Report"}', task.report)
+            assert.same("ReportURL", task.report_url)
+            assert.same(DB.datetime(10), task.updated_at)
+        end)
+
+        test("given scanning task does not exist", function()
+            assert(db:scan_set_report("MISSING", {}, ""))
+        end)
+    end)
+
     test("select", function()
         assert(query(db_, [[
             INSERT INTO scan (scan_id, agent_id, filename) VALUES
@@ -192,21 +208,5 @@ describe("DB", function()
         assert.same({"10 * scan_id", "Foo"}, rows[1])
         assert.same({100, "Agent10:File10"}, rows[2])
         assert.same({200, "Agent20:File20"}, rows[3])
-    end)
-
-    describe("scan_set_report_url", function()
-        it("should update report of the scanning task", function()
-            local scan_id = assert(db:scan_new("Agent", "filename"))
-
-            assert(db:scan_set_report_url(scan_id, "http://cuckoo.com/analysis/100/summary", 10))
-
-            local task = assert(db:scan_get(scan_id))
-            assert.same("http://cuckoo.com/analysis/100/summary", task.report)
-            assert.same(DB.datetime(10), task.updated_at)
-        end)
-
-        test("given scanning task does not exist", function()
-            assert(db:scan_set_error("MISSING", "ERROR"))
-        end)
     end)
 end)
