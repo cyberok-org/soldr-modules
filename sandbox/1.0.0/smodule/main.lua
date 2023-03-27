@@ -139,9 +139,9 @@ function controls.update_config()
     return true
 end
 
-local function send_verdict(dst, filename, score)
+local function send_verdict(dst, filename, score, report)
     __api.send_data_to(dst, cjson.encode{
-        type = "verdict", filename = filename, score = score })
+        type = "verdict", filename = filename, score = score, report = "report" })
 end
 
 local function handle_unfinished_scan(scan)
@@ -156,11 +156,11 @@ local function handle_unfinished_scan(scan)
         if scan.status == status then return true end
 
         if status == "reported" then
-            local score, err = cuckoo:task_score(scan.cuckoo_task_id)
-            assert(score, CuckooError(scan.scan_id, err))
+            local score, report = cuckoo:task_result()
+            assert(score, CuckooError(scan.scan_id, report))
 
             local agent = get_agent(scan.agent_id); if agent then
-                send_verdict(agent.Dst, scan.filename, score)
+                send_verdict(agent.Dst, scan.filename, score, report)
             end
 
             local report_url = cuckoo:task_report_url(scan.cuckoo_task_id)

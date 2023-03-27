@@ -115,14 +115,17 @@ function Cuckoo:task_status(task_id)
     end)
 end
 
----Returns the file maliciousness score for the task with the specified `task_id`.
+---Returns a file maliciousness score and scanning report for the task with the
+---specified `task_id`.
 ---@param task_id integer
 ---@return number? # The file maliciousness score[0;10]
 ---@return string? # Error message if any
-function Cuckoo:task_score(task_id)
+--:: integer -> score::number, report::{...}
+--:: integer -> nil, error
+function Cuckoo:task_result(task_id)
     return try(function()
         local data = assert(self:request("/tasks/summary/" .. task_id))
-        return data.info.score
+        return data.info.score, data
     end)
 end
 

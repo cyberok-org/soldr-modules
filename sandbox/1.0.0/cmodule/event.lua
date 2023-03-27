@@ -27,10 +27,11 @@ local function push_event(name, data)
 end
 
 -- Used to emit "cyberok_sandbox_verdict_suspicious" event.
-function M.verdict_suspicious(filename, score)
+function M.verdict_suspicious(filename, score, report)
     push_event("cyberok_sandbox_verdict_suspicious", {
         ["object.fullpath"] = filename,
         ["score"]           = score,
+        ["report"]          = report,
     })
 end
 
