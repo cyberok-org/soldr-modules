@@ -15,6 +15,15 @@
                 "widgetConfig": {}
             }
         },
+        "report": {
+            "properties": {},
+            "required": [],
+            "rules": {},
+            "type": "object",
+            "ui": {
+                "widgetConfig": {}
+            }
+        },
         "score": {
             "rules": {},
             "type": "number",

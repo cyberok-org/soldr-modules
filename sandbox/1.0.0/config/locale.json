@@ -123,6 +123,16 @@
                 "description": "Путь до файла"
             }
         },
+        "report": {
+            "en": {
+                "title": "report",
+                "description": "Scanning result report"
+            },
+            "ru": {
+                "title": "report",
+                "description": "Отчет сканирования"
+            }
+        },
         "score": {
             "en": {
                 "title": "score",

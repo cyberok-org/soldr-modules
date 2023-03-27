@@ -39,7 +39,8 @@
         ],
         "fields": [
             "object.fullpath",
-            "score"
+            "score",
+            "report"
         ],
         "type": "atomic"
     }
