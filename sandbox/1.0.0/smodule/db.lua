@@ -176,6 +176,15 @@ function DB:scan_set_report(scan_id, report, report_url, now)
     end)
 end
 
+local LIMITED_LENGTH = 256
+local CUTTING_LENGTH = 32
+local function limit_length(value)
+    if type(value) == "string" and #value > LIMITED_LENGTH then
+        value = string.sub(value, 1, CUTTING_LENGTH) .. "…"
+    end
+    return value
+end
+
 -- Executes the given SQL-query on the database.
 -- Returns result rows as the table:
 -- {
@@ -193,6 +202,9 @@ function DB:select(sql)
         end
         local rows = { columns }
         for row in stmt:rows() do
+            for i, value in pairs(row) do
+                row[i] = limit_length(value)
+            end
             table.insert(rows, row)
         end
         return rows
