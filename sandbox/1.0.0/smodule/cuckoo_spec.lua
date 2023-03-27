@@ -22,17 +22,17 @@ describe("cuckoo:create_task #network", function()
     end)
 
     it("returns task id in pending state on success #cuckoo", function()
-        local cuckoo = Cuckoo:new("http://192.168.228.236:8090", "AWFKI9LcPk_Y5i0pcA6XKA", {
-            package  = "exe",
-            options  = "free=yes,procmemdump=no,human=no",
-            priority = 3,
-            platform = "linux",
-            machine  = "cuckoo1",
-            timeout  = 10,
-        })
+        local cuckoo = Cuckoo:new("http://192.168.228.236:8090", "AWFKI9LcPk_Y5i0pcA6XKA")
         local id
         go(function()
-            id = assert(cuckoo:create_task("/usr/bin/bash", "/usr/bin:with/bash"))
+            id = assert(cuckoo:create_task("/usr/bin/bash", "/usr/bin:with/bash", {
+                package  = "exe",
+                options  = "free=yes,procmemdump=no,human=no",
+                priority = 3,
+                platform = "linux",
+                machine  = "cuckoo1",
+                timeout  = 10,
+            }))
         end)
         wait()
 

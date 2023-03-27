@@ -1,7 +1,7 @@
 {
     "a1_cuckoo_url": "http://localhost:8090",
     "a2_cuckoo_key": "S4MPL3",
-    "b1_cuckoo_package": "default",
+    "b1_cuckoo_package": "",
     "b2_cuckoo_package_options": "",
     "b3_cuckoo_priority": 2,
     "c1_cuckoo_platform": "",

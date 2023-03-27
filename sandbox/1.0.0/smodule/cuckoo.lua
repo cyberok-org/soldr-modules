@@ -86,9 +86,11 @@ function Cuckoo:create_task(file, filename, options)
             part:filename(filename or "file")
             -- Provide the analysis options:
             for name, value in pairs(options) do
-                part = mime:part()
-                part:name(name)
-                part:data(tostring(value))
+                if value ~=nil and value ~= "" then
+                    part = mime:part()
+                    part:name(name)
+                    part:data(tostring(value))
+                end
             end
             h:set("MIMEPOST", mime)
         end))
