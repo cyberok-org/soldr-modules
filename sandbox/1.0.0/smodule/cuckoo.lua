@@ -1,9 +1,10 @@
-local cjson  = require "cjson.safe"
-local courl  = require "courl"
-local curl   = require "libcurl"
-local ffi    = require "ffi"
-local try    = require "try"
-local uri    = require "uri"
+local cjson = require "cjson.safe"
+local courl = require "courl"
+local curl  = require "libcurl"
+local ffi   = require "ffi"
+local glue  = require "glue"
+local try   = require "try"
+local uri   = require "uri"
 
 ---@class CuckooOptions
 ---@field public package string Analysis package to be used for the analysis
@@ -139,18 +140,21 @@ end
 -- Extracts properties from the scanning report in the format of verdict event.
 function Cuckoo.verdict(report)
     local verdict = {}
-
-    verdict["info.id"]      = report.info.id
-    verdict["info.score"]   = report.info.score
-    verdict["info.package"] = report.info.package
-
-    verdict["object.category"]      = report.target.category
-    verdict["object.file.type"]     = report.target.file.type
-    verdict["object.file.name"]     = report.target.file.name
-    verdict["object.file.mimetype"] = report.target.file.mimetype
-    verdict["object.file.sha1"]     = report.target.file.sha1
-    verdict["object.file.size"]     = report.target.file.size
-
+    local info = report.info; if info then
+        verdict["info.id"]      = info.id
+        verdict["info.score"]   = info.score
+        verdict["info.package"] = info.package
+    end
+    local target = report.target; if target then
+        verdict["object.category"] = target.category
+        local file = target.file; if file then
+            verdict["object.file.type"]     = file.type
+            verdict["object.file.name"]     = file.name
+            verdict["object.file.mimetype"] = file.mimetype
+            verdict["object.file.sha1"]     = file.sha1
+            verdict["object.file.size"]     = file.size
+        end
+    end
     for i, signature in pairs(report.signatures) do
         verdict["signatures["..(i-1).."].name"]        = signature.name
         verdict["signatures["..(i-1).."].description"] = signature.description
@@ -162,13 +166,13 @@ function Cuckoo.verdict(report)
             verdict["signatures["..(i-1).."].marks["..(j-1).."].category"] = mark.category
         end
     end
-
-    -- TODO:
-    -- verdict["suricata.alerts"] = report.suricata.alerts
-    -- verdict["snort.alerts"]    = report.snort.alerts
-
-    verdict["count_ioc_matched"] = #(report.misp or {})
-
+    local suricata = report.suricata; if suricata then
+        verdict["suricata.alerts"] = suricata.alerts
+    end
+    local snort = report.snort; if snort then
+        verdict["snort.alerts"] = report.snort.alerts
+    end
+    verdict["count_ioc_matched"] = glue.count(report.misp or {})
     return verdict
 end
 
