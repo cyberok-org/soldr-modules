@@ -12,10 +12,10 @@ CREATE TABLE IF NOT EXISTS scan (
     status TEXT NOT NULL DEFAULT 'new',
     error  TEXT,
 
-    cuckoo_task_id INTEGER,
-    cuckoo_options TEXT     NOT NULL DEFAULT '{}', -- JSON-encoded CuckooOptions
-    report         TEXT,                           -- JSON-encoded report
-    report_url     TEXT,
+    task_id      INTEGER,
+    task_options TEXT NOT NULL DEFAULT '{}', -- JSON-encoded scanning options
+    report       TEXT,                       -- JSON-encoded report
+    report_url   TEXT,
 
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, -- datetime: YYYY-MM-DD HH:MM:SS
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP  -- datetime: YYYY-MM-DD HH:MM:SS
@@ -89,7 +89,7 @@ function DB:scan_get(scan_id)
         stmt[1] = scan_id
         while stmt() do
             local scan = get_named_values(stmt)
-            scan.cuckoo_options = assert(cjson.decode(scan.cuckoo_options))
+            scan.task_options = assert(cjson.decode(scan.task_options))
             return scan
         end
         return nil, "not found"
@@ -110,15 +110,15 @@ function DB:scan_list_unfinished()
 end
 
 -- Creates a new scanning task in the database.
---:: string, string, CuckooOptions, integer? -> scan_id::integer?, error?
-function DB:scan_new(agent_id, filename, cuckoo_options, now)
+--:: string, string, any, integer? -> scan_id::integer?, error?
+function DB:scan_new(agent_id, filename, options, now)
     return with_prepare(self._db, [[
-        INSERT INTO scan (status, agent_id, filename, cuckoo_options, created_at, updated_at)
+        INSERT INTO scan (status, agent_id, filename, task_options, created_at, updated_at)
         VALUES ('new', ?1, ?2, ?3, ?4, ?4);
     ]], function(stmt)
         stmt[1] = agent_id
         stmt[2] = filename
-        stmt[3] = cjson.encode(cuckoo_options)
+        stmt[3] = cjson.encode(options)
         stmt[4] = DB.datetime(now)
         stmt()
         return self._db:last_insert_rowid()
@@ -127,11 +127,11 @@ end
 
 -- Complements the scanning task with scanning process details.
 --:: integer, integer, integer? -> boolean, error?
-function DB:scan_set_task(scan_id, cuckoo_task_id, now)
+function DB:scan_set_task(scan_id, task_id, now)
     return with_prepare(self._db, [[
-        UPDATE scan SET cuckoo_task_id=?2, updated_at=?3 WHERE scan_id=?1
+        UPDATE scan SET task_id=?2, updated_at=?3 WHERE scan_id=?1
     ]], function(stmt)
-        stmt[1], stmt[2], stmt[3] = scan_id, cuckoo_task_id, DB.datetime(now)
+        stmt[1], stmt[2], stmt[3] = scan_id, task_id, DB.datetime(now)
         return stmt() == false
     end)
 end

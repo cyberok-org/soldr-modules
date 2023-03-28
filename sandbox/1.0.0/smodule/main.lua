@@ -95,7 +95,7 @@ local function receive_file(src, path, name)
         local _, err = check(src, try(function()
             local scan, err = db:scan_get(scan_id)
             assert(scan, ScanGetError(scan_id, err))
-            local task_id, err = cuckoo:create_task(path, scan.filename, scan.cuckoo_options)
+            local task_id, err = cuckoo:create_task(path, scan.filename, scan.task_options)
             assert(task_id, CuckooCreateTaskError(scan_id, err))
             local ok, err = db:scan_set_task(scan_id, task_id)
             assert(ok, ScanUpdateError(scan_id, scan.status, err))
@@ -150,16 +150,16 @@ local function handle_unfinished_scan(scan)
         -- TODO: handle the staled scanning task
 
         -- Skip new scanning tasks while receiving a file.
-        if not scan.cuckoo_task_id then return true end
+        if not scan.task_id then return true end
 
-        local status, err = cuckoo:task_status(scan.cuckoo_task_id)
+        local status, err = cuckoo:task_status(scan.task_id)
         assert(status, CuckooError(scan.scan_id, err))
         if scan.status == status then return true end
 
         if status == "reported" then
-            local report, err = cuckoo:task_report(scan.cuckoo_task_id)
+            local report, err = cuckoo:task_report(scan.task_id)
             assert(report, CuckooError(scan.scan_id, err))
-            local report_url = cuckoo:task_report_url(scan.cuckoo_task_id)
+            local report_url = cuckoo:task_report_url(scan.task_id)
             local ok, err = db:scan_set_report(scan.scan_id, report, report_url)
             assert(ok, ScanUpdateError(scan.scan_id, status, err))
 

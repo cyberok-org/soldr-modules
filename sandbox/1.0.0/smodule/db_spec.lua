@@ -53,31 +53,31 @@ describe("DB", function()
     describe("scan_get", function()
         it("returns info about the requested scanning task", function()
             assert(query(db_, [[
-            INSERT INTO scan (scan_id, agent_id, filename, status, error, cuckoo_task_id, cuckoo_options, created_at, updated_at)
+            INSERT INTO scan (scan_id, agent_id, filename, status, error, task_id, task_options, created_at, updated_at)
             VALUES
                 (10, 'Agent10', 'File10', 'new',   NULL,      100, '{}',        "CreatedAt10", "UpdatedAt10"),
                 (20, 'Agent20', 'File20', 'error', 'Error20', 200, '{"Two":2}', "CreatedAt20", "UpdatedAt20");
             ]]))
             assert.same({
-                scan_id        = 10,
-                agent_id       = "Agent10",
-                filename       = "File10",
-                status         = "new",
-                cuckoo_task_id = 100,
-                cuckoo_options = {},
-                created_at     = "CreatedAt10",
-                updated_at     = "UpdatedAt10",
+                scan_id      = 10,
+                agent_id     = "Agent10",
+                filename     = "File10",
+                status       = "new",
+                task_id      = 100,
+                task_options = {},
+                created_at   = "CreatedAt10",
+                updated_at   = "UpdatedAt10",
             }, assert(db:scan_get(10)))
             assert.same({
-                scan_id        = 20,
-                agent_id       = "Agent20",
-                filename       = "File20",
-                status         = "error",
-                error          = "Error20",
-                cuckoo_task_id = 200,
-                cuckoo_options = {Two=2},
-                created_at     = "CreatedAt20",
-                updated_at     = "UpdatedAt20",
+                scan_id      = 20,
+                agent_id     = "Agent20",
+                filename     = "File20",
+                status       = "error",
+                error        = "Error20",
+                task_id      = 200,
+                task_options = {Two=2},
+                created_at   = "CreatedAt20",
+                updated_at   = "UpdatedAt20",
             }, assert(db:scan_get(20)))
         end)
 
@@ -123,7 +123,7 @@ describe("DB", function()
             assert.same(2, scan_id)
 
             local rows = assert(query(db_, [[
-                SELECT status, agent_id, filename, cuckoo_options, created_at, updated_at
+                SELECT status, agent_id, filename, task_options, created_at, updated_at
                   FROM scan
                  ORDER BY scan_id;
             ]]))
@@ -138,9 +138,9 @@ describe("DB", function()
             local scan_id = assert(db:scan_new("Agent", "filename"))
             assert(db:scan_set_task(scan_id, 100, 10))
 
-            local task = assert(db:scan_get(scan_id))
-            assert.same(100, task.cuckoo_task_id)
-            assert.same(DB.datetime(10), task.updated_at)
+            local scan = assert(db:scan_get(scan_id))
+            assert.same(100, scan.task_id)
+            assert.same(DB.datetime(10), scan.updated_at)
         end)
 
         test("given scanning task does not exist", function()
@@ -153,9 +153,9 @@ describe("DB", function()
             local scan_id = assert(db:scan_new("Agent", "filename"))
             assert(db:scan_set_status(scan_id, "STATUS", 10))
 
-            local task = assert(db:scan_get(scan_id))
-            assert.same("STATUS", task.status)
-            assert.same(DB.datetime(10), task.updated_at)
+            local scan = assert(db:scan_get(scan_id))
+            assert.same("STATUS", scan.status)
+            assert.same(DB.datetime(10), scan.updated_at)
         end)
 
         test("given scanning task does not exist", function()
@@ -168,10 +168,10 @@ describe("DB", function()
             local scan_id = assert(db:scan_new("Agent", "filename"))
             assert(db:scan_set_error(scan_id, "ERROR", 10))
 
-            local task = assert(db:scan_get(scan_id))
-            assert.same("error", task.status)
-            assert.same("ERROR", task.error)
-            assert.same(DB.datetime(10), task.updated_at)
+            local scan = assert(db:scan_get(scan_id))
+            assert.same("error", scan.status)
+            assert.same("ERROR", scan.error)
+            assert.same(DB.datetime(10), scan.updated_at)
         end)
 
         test("given scanning task does not exist", function()
@@ -184,10 +184,10 @@ describe("DB", function()
             local scan_id = assert(db:scan_new("Agent", "filename"))
             assert(db:scan_set_report(scan_id, {report="Report"}, "ReportURL", 10))
 
-            local task = assert(db:scan_get(scan_id))
-            assert.same('{"report":"Report"}', task.report)
-            assert.same("ReportURL", task.report_url)
-            assert.same(DB.datetime(10), task.updated_at)
+            local scan = assert(db:scan_get(scan_id))
+            assert.same('{"report":"Report"}', scan.report)
+            assert.same("ReportURL", scan.report_url)
+            assert.same(DB.datetime(10), scan.updated_at)
         end)
 
         test("given scanning task does not exist", function()
