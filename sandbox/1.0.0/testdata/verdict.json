@@ -1,40 +1,61 @@
 {
-    "info.id": 1,
-    "info.score": 0.4,
-    "info.package": "default",
-    "object.category": "file",
-    "object.file.type": "ELF 64-bit LSB shared object, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, for GNU/Linux 3.2.0, BuildID[sha1]=ffe165dc81a64aea2b05beda07aeda8ad71f1e7c, stripped",
-    "object.file.name": "bash",
-    "object.file.mimetype": "application/x-pie-executable; charset=binary",
-    "object.file.sha1": "0533efae0065e72c1d833b9f7a678a20995bd5a6",
-    "object.file.size": 1168776,
-    "signatures[0].name": "network_http",
-    "signatures[0].description": "Performs some HTTP requests",
-    "signatures[0].severity": 2,
-    "signatures[0].markcount": 12,
-    "signatures[0].marks[0].category": "request",
-    "signatures[0].marks[0].ioc": "GET http://id.archive.ubuntu.com/ubuntu/dists/bionic/InRelease",
-    "signatures[0].marks[1].category": "request",
-    "signatures[0].marks[1].ioc": "GET http://id.archive.ubuntu.com/ubuntu/dists/bionic-updates/InRelease",
-    "signatures[0].marks[2].category": "request",
-    "signatures[0].marks[2].ioc": "GET http://id.archive.ubuntu.com/ubuntu/dists/bionic-backports/InRelease",
-    "signatures[0].marks[3].category": "request",
-    "signatures[0].marks[3].ioc": "GET http://id.archive.ubuntu.com/ubuntu/dists/bionic-security/InRelease",
-    "signatures[0].marks[4].category": "request",
-    "signatures[0].marks[4].ioc": "GET http://id.archive.ubuntu.com/ubuntu/dists/bionic-updates/main/binary-amd64/by-hash/SHA256/5d6724592e1c7e3dfde38f4377eeb2511d1aa915d21dcac30561c97f98a54958",
-    "signatures[0].marks[5].category": "request",
-    "signatures[0].marks[5].ioc": "GET http://ddebs.ubuntu.com/dists/bionic/InRelease",
-    "signatures[0].marks[6].category": "request",
-    "signatures[0].marks[6].ioc": "GET http://id.archive.ubuntu.com/ubuntu/dists/bionic-updates/main/i18n/by-hash/SHA256/e85658f6131833b3b9d11772ea71c0d3ecdadde9844ed3dab0016260a4edadd5",
-    "signatures[0].marks[7].category": "request",
-    "signatures[0].marks[7].ioc": "GET http://ddebs.ubuntu.com/dists/bionic-updates/InRelease",
-    "signatures[0].marks[8].category": "request",
-    "signatures[0].marks[8].ioc": "GET http://ddebs.ubuntu.com/dists/bionic-proposed/InRelease",
-    "signatures[0].marks[9].category": "request",
-    "signatures[0].marks[9].ioc": "GET http://ddebs.ubuntu.com/dists/bionic/main/binary-amd64/Packages.xz",
-    "signatures[0].marks[10].category": "request",
-    "signatures[0].marks[10].ioc": "GET http://id.archive.ubuntu.com/ubuntu/pool/main/t/tar/tar_1.29b-2ubuntu0.4_amd64.deb",
-    "signatures[0].marks[11].category": "request",
-    "signatures[0].marks[11].ioc": "GET http://id.archive.ubuntu.com/ubuntu/pool/main/s/systemd/libnss-systemd_237-3ubuntu10.57_amd64.deb",
+    "info": {
+        "id": 1,
+        "score": 0.4,
+        "package": "default"
+    },
+    "object": {
+        "category": "file",
+        "file": {
+            "type": "ELF 64-bit LSB shared object, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, for GNU/Linux 3.2.0, BuildID[sha1]=ffe165dc81a64aea2b05beda07aeda8ad71f1e7c, stripped",
+            "name": "bash",
+            "mimetype": "application/x-pie-executable; charset=binary",
+            "sha1": "0533efae0065e72c1d833b9f7a678a20995bd5a6",
+            "size": 1168776
+        }
+    },
+    "signatures": [{
+        "name": "network_http",
+        "description": "Performs some HTTP requests",
+        "severity": 2,
+        "markcount": 12,
+        "marks": [{
+            "category": "request",
+            "ioc": "GET http://id.archive.ubuntu.com/ubuntu/dists/bionic/InRelease"
+        },{
+            "category": "request",
+            "ioc": "GET http://id.archive.ubuntu.com/ubuntu/dists/bionic-updates/InRelease"
+        },{
+            "category": "request",
+            "ioc": "GET http://id.archive.ubuntu.com/ubuntu/dists/bionic-backports/InRelease"
+        },{
+            "category": "request",
+            "ioc": "GET http://id.archive.ubuntu.com/ubuntu/dists/bionic-security/InRelease"
+        },{
+            "category": "request",
+            "ioc": "GET http://id.archive.ubuntu.com/ubuntu/dists/bionic-updates/main/binary-amd64/by-hash/SHA256/5d6724592e1c7e3dfde38f4377eeb2511d1aa915d21dcac30561c97f98a54958"
+        },{
+            "category": "request",
+            "ioc": "GET http://ddebs.ubuntu.com/dists/bionic/InRelease"
+        },{
+            "category": "request",
+            "ioc": "GET http://id.archive.ubuntu.com/ubuntu/dists/bionic-updates/main/i18n/by-hash/SHA256/e85658f6131833b3b9d11772ea71c0d3ecdadde9844ed3dab0016260a4edadd5"
+        },{
+            "category": "request",
+            "ioc": "GET http://ddebs.ubuntu.com/dists/bionic-updates/InRelease"
+        },{
+            "category": "request",
+            "ioc": "GET http://ddebs.ubuntu.com/dists/bionic-proposed/InRelease"
+        },{
+            "category": "request",
+            "ioc": "GET http://ddebs.ubuntu.com/dists/bionic/main/binary-amd64/Packages.xz"
+        },{
+            "category": "request",
+            "ioc": "GET http://id.archive.ubuntu.com/ubuntu/pool/main/t/tar/tar_1.29b-2ubuntu0.4_amd64.deb"
+        },{
+            "category": "request",
+            "ioc": "GET http://id.archive.ubuntu.com/ubuntu/pool/main/s/systemd/libnss-systemd_237-3ubuntu10.57_amd64.deb"
+        }]
+    }],
     "count_ioc_matched": 0
 }

@@ -140,39 +140,48 @@ end
 -- Extracts properties from the scanning report in the format of verdict event.
 function Cuckoo.verdict(report)
     local verdict = {}
-    local info = report.info; if info then
-        verdict["info.id"]      = info.id
-        verdict["info.score"]   = info.score
-        verdict["info.package"] = info.package
+    if report.info then
+        verdict.info = {}
+        verdict.info.id      = report.info.id
+        verdict.info.score   = report.info.score
+        verdict.info.package = report.info.package
     end
-    local target = report.target; if target then
-        verdict["object.category"] = target.category
-        local file = target.file; if file then
-            verdict["object.file.type"]     = file.type
-            verdict["object.file.name"]     = file.name
-            verdict["object.file.mimetype"] = file.mimetype
-            verdict["object.file.sha1"]     = file.sha1
-            verdict["object.file.size"]     = file.size
+    if report.target then
+        verdict.object = {}
+        verdict.object.category = report.target.category
+        if report.target.file then
+            verdict.object.file = {}
+            verdict.object.file.type     = report.target.file.type
+            verdict.object.file.name     = report.target.file.name
+            verdict.object.file.mimetype = report.target.file.mimetype
+            verdict.object.file.sha1     = report.target.file.sha1
+            verdict.object.file.size     = report.target.file.size
         end
     end
-    for i, signature in pairs(report.signatures) do
-        verdict["signatures["..(i-1).."].name"]        = signature.name
-        verdict["signatures["..(i-1).."].description"] = signature.description
-        verdict["signatures["..(i-1).."].severity"]    = signature.severity
-        verdict["signatures["..(i-1).."].markcount"]   = signature.markcount
-        for j, mark in pairs(signature.marks) do
-            verdict["signatures["..(i-1).."].marks["..(j-1).."].rule"]     = mark.rule
-            verdict["signatures["..(i-1).."].marks["..(j-1).."].ioc"]      = mark.ioc
-            verdict["signatures["..(i-1).."].marks["..(j-1).."].category"] = mark.category
+    for _, report_signature in pairs(report.signatures) do
+        local signature = {}
+        signature.name        = report_signature.name
+        signature.description = report_signature.description
+        signature.severity    = report_signature.severity
+        signature.markcount   = report_signature.markcount
+        for _, report_signature_mark in pairs(report_signature.marks) do
+            local mark = {}
+            mark.rule     = report_signature_mark.rule
+            mark.ioc      = report_signature_mark.ioc
+            mark.category = report_signature_mark.category
+            signature.marks = glue.append(signature.marks or {}, mark)
         end
+        verdict.signatures = glue.append(verdict.signatures or {}, signature)
     end
-    local suricata = report.suricata; if suricata then
-        verdict["suricata.alerts"] = suricata.alerts
+    if report.suricata then
+        verdict.suricata = {}
+        verdict.suricata.alerts = report.suricata.alerts
     end
-    local snort = report.snort; if snort then
-        verdict["snort.alerts"] = report.snort.alerts
+    if report.snort then
+        verdict.snort = {}
+        verdict.snort.alerts = report.snort.alerts
     end
-    verdict["count_ioc_matched"] = glue.count(report.misp or {})
+    verdict.count_ioc_matched = glue.count(report.misp or {})
     return verdict
 end
 
