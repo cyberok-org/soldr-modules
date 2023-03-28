@@ -27,20 +27,13 @@ local function push_event(name, data)
 end
 
 -- Used to emit "cyberok_sandbox_verdict_suspicious" event.
-function M.verdict_suspicious(filename, score, report)
-    push_event("cyberok_sandbox_verdict_suspicious", {
-        ["object.fullpath"] = filename,
-        ["score"]           = score,
-        ["report"]          = report,
-    })
+function M.verdict_suspicious(verdict)
+    push_event("cyberok_sandbox_verdict_suspicious", verdict)
 end
 
 -- Used to emit "cyberok_sandbox_verdict_clean" event.
-function M.verdict_clean(filename, score)
-    push_event("cyberok_sandbox_verdict_clean", {
-        ["object.fullpath"] = filename,
-        ["score"]           = score,
-    })
+function M.verdict_clean(verdict)
+    push_event("cyberok_sandbox_verdict_clean", verdict)
 end
 
 -- Used to emit "cyberok_sandbox_error" event.

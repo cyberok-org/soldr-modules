@@ -136,10 +136,40 @@ function Cuckoo:task_report_url(task_id)
     return uri.format(report)
 end
 
--- Extracts a score from the given scanning report.
---:: {...} -> number?
-function Cuckoo.score(report)
-    return report.info.score
+-- Extracts properties from the scanning report in the format of verdict event.
+function Cuckoo.verdict(report)
+    local verdict = {}
+
+    verdict["info.id"]      = report.info.id
+    verdict["info.score"]   = report.info.score
+    verdict["info.package"] = report.info.package
+
+    verdict["object.category"]      = report.target.category
+    verdict["object.file.type"]     = report.target.file.type
+    verdict["object.file.name"]     = report.target.file.name
+    verdict["object.file.mimetype"] = report.target.file.mimetype
+    verdict["object.file.sha1"]     = report.target.file.sha1
+    verdict["object.file.size"]     = report.target.file.size
+
+    for i, signature in pairs(report.signatures) do
+        verdict["signatures["..(i-1).."].name"]        = signature.name
+        verdict["signatures["..(i-1).."].description"] = signature.description
+        verdict["signatures["..(i-1).."].severity"]    = signature.severity
+        verdict["signatures["..(i-1).."].markcount"]   = signature.markcount
+        for j, mark in pairs(signature.marks) do
+            verdict["signatures["..(i-1).."].marks["..(j-1).."].rule"]     = mark.rule
+            verdict["signatures["..(i-1).."].marks["..(j-1).."].ioc"]      = mark.ioc
+            verdict["signatures["..(i-1).."].marks["..(j-1).."].category"] = mark.category
+        end
+    end
+
+    -- TODO:
+    -- verdict["suricata.alerts"] = report.suricata.alerts
+    -- verdict["snort.alerts"]    = report.snort.alerts
+
+    verdict["count_ioc_matched"] = #(report.misp or {})
+
+    return verdict
 end
 
 return Cuckoo

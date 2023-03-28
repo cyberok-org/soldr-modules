@@ -110,8 +110,7 @@ function handlers.exec_sql(src, data)
     check(src, try(function()
         local rows, err = db:select(data.query)
         assert(rows, ExecSQLError(err))
-        __api.send_data_to(src,
-            cjson.encode{ type = "show_sql_rows", data = rows })
+        __api.send_data_to(src, cjson.encode{ type = "show_sql_rows", data = rows })
     end))
     return true
 end
@@ -142,9 +141,8 @@ function controls.update_config()
     return true
 end
 
-local function send_verdict(dst, filename, score, report)
-    __api.send_data_to(dst, cjson.encode{
-        type = "verdict", filename = filename, score = score, report = report })
+local function send_verdict(dst, verdict)
+    __api.send_data_to(dst, cjson.encode{ type = "verdict", verdict = verdict })
 end
 
 local function handle_unfinished_scan(scan)
@@ -166,14 +164,16 @@ local function handle_unfinished_scan(scan)
             assert(ok, ScanUpdateError(scan.scan_id, status, err))
 
             local agent = get_agent(scan.agent_id); if agent then
-                local score = Cuckoo.score(report)
-                send_verdict(agent.Dst, scan.filename, score, report)
+                local verdict = Cuckoo.verdict(report)
+                verdict["scan.id"] = scan.scan_id
+                verdict["scan.url"] = report_url
+                verdict["object.fullpath"] = scan.filename
+                send_verdict(agent.Dst, verdict)
             end
         end
 
         local ok, err = db:scan_set_status(scan.scan_id, status)
         assert(ok, ScanUpdateError(scan.scan_id, status, err))
-
         return true
     end)
 end

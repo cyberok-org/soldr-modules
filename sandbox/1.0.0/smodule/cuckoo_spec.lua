@@ -1,6 +1,7 @@
+local cjson  = require "cjson"
 local courl  = require "courl"
-local go     = require "go"
 local Cuckoo = require "cuckoo"
+local go     = require "go"
 
 local function wait()
     repeat
@@ -9,7 +10,7 @@ local function wait()
     until go:idle() and courl:idle()
 end
 
-describe("cuckoo:create_task #network", function()
+describe("Cuckoo:create_task #network", function()
     it("returns error on unavailable server", function()
         local cuckoo = Cuckoo:new("http://cuckoo.invalid", "AWFKI9LcPk_Y5i0pcA6XKA")
         local ok, err
@@ -47,12 +48,27 @@ describe("cuckoo:create_task #network", function()
     end)
 end)
 
-describe("cuckoo:task_report_url", function()
+describe("Cuckoo:task_report_url", function()
     it("returns url to report for task with the specified id", function()
         local cuckoo = Cuckoo:new("http://cuckoo.com:8090", "AWFKI9LcPk_Y5i0pcA6XKA")
 
         local report_url = cuckoo:task_report_url(100)
 
         assert.are.equal("http://cuckoo.com/analysis/100/summary", report_url)
+    end)
+end)
+
+local function read_file(path)
+    local f = assert(io.open(path, "rb"))
+    local data = assert(f:read("a"))
+    f:close()
+    return data
+end
+
+describe("Cuckoo.verdict", function()
+    it("returns a verdict built from a scanning report", function()
+        local report = cjson.decode(read_file("testdata/report.json"))
+        local verdict = cjson.decode(read_file("testdata/verdict.json"))
+        assert.same(verdict, Cuckoo.verdict(report))
     end)
 end)

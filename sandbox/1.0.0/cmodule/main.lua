@@ -53,9 +53,11 @@ function handlers.request_file(src, data)
 end
 
 function handlers.verdict(src, data)
-    if data.score < score_threshold
-        then event.verdict_clean(data.filename, data.score)
-        else event.verdict_suspicious(data.filename, data.score, data.report) end
+    local score = data.verdict.info.score
+    if score >= score_threshold
+        then event.verdict_suspicious(data.verdict)
+        else event.verdict_clean(data.verdict)
+    end
     return true
 end
 
