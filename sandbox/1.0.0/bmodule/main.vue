@@ -63,7 +63,7 @@
     data: () => ({
       leftTab: undefined,
       filename: "",
-      sqlQuery: "SELECT * FROM scan",
+      sqlQuery: "SELECT scan_id, filename, status, report_url, error FROM scan ORDER BY scan_id DESC LIMIT 10;",
       results: undefined,
       maxTableHeight: 585,
       timerId: undefined,
