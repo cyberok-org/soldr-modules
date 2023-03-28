@@ -30,9 +30,7 @@
     ],
     "fields": [
         "message",
-        "object.fullpath",
-        "score",
-        "report"
+        "object.fullpath"
     ],
     "tags": []
 }

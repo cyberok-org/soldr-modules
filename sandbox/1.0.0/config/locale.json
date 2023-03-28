@@ -122,26 +122,6 @@
                 "title": "object.fullpath",
                 "description": "Путь до файла"
             }
-        },
-        "report": {
-            "en": {
-                "title": "report",
-                "description": "Scanning result report"
-            },
-            "ru": {
-                "title": "report",
-                "description": "Отчет сканирования"
-            }
-        },
-        "score": {
-            "en": {
-                "title": "score",
-                "description": "Scanning result score"
-            },
-            "ru": {
-                "title": "score",
-                "description": "Оценка результата сканирования"
-            }
         }
     },
     "actions": {

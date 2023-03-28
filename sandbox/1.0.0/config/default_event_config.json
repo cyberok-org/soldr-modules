@@ -23,8 +23,7 @@
             }
         ],
         "fields": [
-            "object.fullpath",
-            "score"
+            "object.fullpath"
         ],
         "type": "atomic"
     },
@@ -38,9 +37,7 @@
             }
         ],
         "fields": [
-            "object.fullpath",
-            "score",
-            "report"
+            "object.fullpath"
         ],
         "type": "atomic"
     }
