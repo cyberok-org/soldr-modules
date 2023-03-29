@@ -8,10 +8,7 @@
         v-if="viewMode === 'agent'"
       >
         <div class="uk-margin">
-          <el-input
-            :placeholder="locale[$i18n.locale]['filePlaceholder']"
-            v-model="filename"
-          >
+          <el-input :placeholder="locale[$i18n.locale]['filePlaceholder']" v-model="filename">
             <el-button
               slot="append"
               icon="el-icon-s-promotion"
@@ -22,11 +19,7 @@
               {{ locale[$i18n.locale]["buttonScan"] }}
             </el-button>
           </el-input>
-          <ncform
-            :form-schema="optionsSchema"
-            form-name="options"
-            v-model="optionsSchema.value"
-          />
+          <ncform :form-schema="optionsSchema" form-name="options" v-model="optionsSchema.value" />
         </div>
         <div>
           <el-input
@@ -62,25 +55,6 @@
 <script>
   const name = "cyberok_sandbox";
 
-  function isObject(item) {
-    return item && typeof item === "object" && !Array.isArray(item);
-  }
-
-  function mergeDeep(target, source) {
-    let output = Object.assign({}, target);
-    if (isObject(target) && isObject(source)) {
-      Object.keys(source).forEach((key) => {
-        if (isObject(source[key])) {
-          if (!(key in target)) Object.assign(output, { [key]: source[key] });
-          else output[key] = mergeDeep(target[key], source[key]);
-        } else {
-          Object.assign(output, { [key]: source[key] });
-        }
-      });
-    }
-    return output;
-  }
-
   module.exports = {
     name,
     props: ["protoAPI", "hash", "module", "api", "components", "viewMode"],
@@ -92,100 +66,6 @@
       maxTableHeight: 585,
       timerId: undefined,
       connection: undefined,
-      optionsSchema: {
-        type: "object",
-        properties: {
-          package: {
-            type: "string",
-            ui: {
-              columns: 4,
-              widgetConfig: {
-                autocomplete: {
-                  enumSource: [
-                    { package: "com" },
-                    { package: "cpl" },
-                    { package: "dll" },
-                    { package: "doc" },
-                    { package: "exec" },
-                    { package: "generic" },
-                    { package: "ie" },
-                    { package: "ff" },
-                    { package: "jar" },
-                    { package: "js" },
-                    { package: "jse" },
-                    { package: "hta" },
-                    { package: "hwp" },
-                    { package: "msi" },
-                    { package: "pdf" },
-                    { package: "ppt" },
-                    { package: "ps1" },
-                    { package: "pub" },
-                    { package: "python" },
-                    { package: "vbs" },
-                    { package: "wsf" },
-                    { package: "xls" },
-                    { package: "zip" },
-                  ],
-                  immediateShow: true,
-                  itemTemplate:
-                    "\u003cspan\u003e{{item.package}}\u003c/span\u003e",
-                  itemValueField: "package",
-                },
-              },
-            },
-          },
-          options: {
-            type: "string",
-            ui: { columns: 4 },
-          },
-          priority: {
-            rules: {
-              maximum: 3,
-              minimum: 1,
-            },
-            type: "integer",
-            ui: {
-              columns: 4,
-              widget: "radio",
-              widgetConfig: {
-                enumSource: [
-                  { label: "Low", value: 1 },
-                  { label: "Mid", value: 2 },
-                  { label: "High", value: 3 },
-                ],
-              },
-            },
-          },
-          platform: {
-            type: "string",
-            ui: {
-              columns: 4,
-              widgetConfig: {
-                autocomplete: {
-                  enumSource: [
-                    { platform: "windows" },
-                    { platform: "darwin" },
-                    { platform: "linux" },
-                  ],
-                  immediateShow: true,
-                  itemTemplate:
-                    "\u003cspan\u003e{{item.platform}}\u003c/span\u003e",
-                  itemValueField: "platform",
-                },
-              },
-            },
-          },
-          machine: {
-            type: "string",
-            ui: { columns: 4 },
-          },
-          timeout: {
-            type: "number",
-            ui: { columns: 4 },
-          },
-        },
-        additionalProperties: false,
-      },
       locale: {
         ru: {
           api: "Проверка файлов",
@@ -236,15 +116,10 @@
           this.connection = connection;
           this.connection.subscribe(this.onData, "data");
           this.execSQL();
-          this.initCuckooOptionsForm();
-          this.$root.NotificationsService.success(
-            `${date} ${this.locale[this.$i18n.locale]["connected"]}`
-          );
+          this.$root.NotificationsService.success(`${date} ${this.locale[this.$i18n.locale]["connected"]}`);
         },
         (_error) => {
-          this.$root.NotificationsService.error(
-            this.locale[this.$i18n.locale]["connServerError"]
-          );
+          this.$root.NotificationsService.error(this.locale[this.$i18n.locale]["connServerError"]);
         }
       );
     },
@@ -262,9 +137,7 @@
       tableData() {
         if (!this.results || this.results.length < 2) return [];
         const headers = this.results[0];
-        return this.results
-          .slice(1)
-          .map((r) => r.reduce((o, v, i) => ({ ...o, [headers[i]]: v }), {}));
+        return this.results.slice(1).map((r) => r.reduce((o, v, i) => ({ ...o, [headers[i]]: v }), {}));
       },
       tableColumns() {
         if (!this.results || this.results.length < 1) return [];
@@ -279,73 +152,103 @@
           }, 0),
         }));
       },
-    },
-    methods: {
-      onData(packet) {
-        const data = new TextDecoder("utf-8").decode(packet.content.data);
-        const msg = JSON.parse(data);
-        if (msg.type == "show_sql_rows") {
-          this.results = msg.data;
-        } else if (msg.type == "receive_report") {
-          const blob = new Blob([msg.report], {type: "application/json"});
-          const a = document.createElement("a");
-          a.href = window.URL.createObjectURL(blob);
-          a.download = "report.json";
-          a.click();
-        } else if (msg.type == "error") {
-          const localized = this.locale[this.$i18n.locale][msg.error.name];
-          const message =
-            localized || `[${msg.error.name}] ${msg.error.message}`;
-          this.$root.NotificationsService.error(message);
-        } else {
-          this.$root.NotificationsService.error(
-            this.locale[this.$i18n.locale]["unknownMessageError"]
-          );
-        }
-        return true;
-      },
-      execSQL() {
-        this.connection.sendData(
-          JSON.stringify({ type: "exec_sql", query: this.sqlQuery })
-        );
-      },
-      scanFile() {
-        this.connection.sendData(
-          JSON.stringify({ type: "scan_file", filename: this.filename.trim() })
-        );
-        this.$root.NotificationsService.success(
-          this.locale[this.$i18n.locale]["scanRequestLoading"]
-        );
-      },
-      requestReport() {
-        this.connection.sendData(JSON.stringify({type: "request_report", scan_id: 1}));
-      },
-      resizeTable() {
-        this.maxTableHeight = this.$refs.boxTable.clientHeight - 1;
-      },
-      configLabel(textID, key = "title") {
-        return this.module.locale.config[textID][this.$i18n.locale][key];
-      },
-      initCuckooOptionsForm() {
-        this.optionsSchema = mergeDeep(this.optionsSchema, {
+      optionsSchema() {
+        return {
+          type: "object",
           properties: {
             package: {
-              ui: { label: this.configLabel("b1_cuckoo_package") },
+              type: "string",
+              ui: {
+                label: this.configLabel("b1_cuckoo_package"),
+                columns: 4,
+                widgetConfig: {
+                  autocomplete: {
+                    enumSource: [
+                      { package: "com" },
+                      { package: "cpl" },
+                      { package: "dll" },
+                      { package: "doc" },
+                      { package: "exec" },
+                      { package: "generic" },
+                      { package: "ie" },
+                      { package: "ff" },
+                      { package: "jar" },
+                      { package: "js" },
+                      { package: "jse" },
+                      { package: "hta" },
+                      { package: "hwp" },
+                      { package: "msi" },
+                      { package: "pdf" },
+                      { package: "ppt" },
+                      { package: "ps1" },
+                      { package: "pub" },
+                      { package: "python" },
+                      { package: "vbs" },
+                      { package: "wsf" },
+                      { package: "xls" },
+                      { package: "zip" },
+                    ],
+                    immediateShow: true,
+                    itemTemplate: "\u003cspan\u003e{{item.package}}\u003c/span\u003e",
+                    itemValueField: "package",
+                  },
+                },
+              },
             },
             options: {
-              ui: { label: this.configLabel("b2_cuckoo_package_options") },
+              type: "string",
+              ui: {
+                label: this.configLabel("b2_cuckoo_package_options"),
+                columns: 4,
+              },
             },
             priority: {
-              ui: { label: this.configLabel("b3_cuckoo_priority") },
+              rules: {
+                maximum: 3,
+                minimum: 1,
+              },
+              type: "integer",
+              ui: {
+                label: this.configLabel("b3_cuckoo_priority"),
+                columns: 4,
+                widget: "radio",
+                widgetConfig: {
+                  enumSource: [
+                    { label: "Low", value: 1 },
+                    { label: "Mid", value: 2 },
+                    { label: "High", value: 3 },
+                  ],
+                },
+              },
             },
             platform: {
-              ui: { label: this.configLabel("c1_cuckoo_platform") },
+              type: "string",
+              ui: {
+                label: this.configLabel("c1_cuckoo_platform"),
+                columns: 4,
+                widgetConfig: {
+                  autocomplete: {
+                    enumSource: [{ platform: "windows" }, { platform: "darwin" }, { platform: "linux" }],
+                    immediateShow: true,
+                    itemTemplate: "\u003cspan\u003e{{item.platform}}\u003c/span\u003e",
+                    itemValueField: "platform",
+                  },
+                },
+              },
             },
             machine: {
-              ui: { label: this.configLabel("c2_cuckoo_machine") },
+              type: "string",
+              ui: {
+                label: this.configLabel("c2_cuckoo_machine"),
+                columns: 4,
+              },
             },
             timeout: {
-              ui: { label: this.configLabel("c3_cuckoo_timeout") },
+              type: "number",
+              ui: {
+                label: this.configLabel("c3_cuckoo_timeout"),
+                columns: 4,
+              },
             },
           },
           value: {
@@ -356,7 +259,46 @@
             machine: this.module.current_config.c2_cuckoo_machine,
             timeout: this.module.current_config.c3_cuckoo_timeout,
           },
-        });
+          additionalProperties: false,
+        };
+      },
+    },
+    methods: {
+      onData(packet) {
+        const data = new TextDecoder("utf-8").decode(packet.content.data);
+        const msg = JSON.parse(data);
+        if (msg.type == "show_sql_rows") {
+          this.results = msg.data;
+        } else if (msg.type == "receive_report") {
+          const blob = new Blob([msg.report], { type: "application/json" });
+          const a = document.createElement("a");
+          a.href = window.URL.createObjectURL(blob);
+          a.download = "report.json";
+          a.click();
+        } else if (msg.type == "error") {
+          const localized = this.locale[this.$i18n.locale][msg.error.name];
+          const message = localized || `[${msg.error.name}] ${msg.error.message}`;
+          this.$root.NotificationsService.error(message);
+        } else {
+          this.$root.NotificationsService.error(this.locale[this.$i18n.locale]["unknownMessageError"]);
+        }
+        return true;
+      },
+      execSQL() {
+        this.connection.sendData(JSON.stringify({ type: "exec_sql", query: this.sqlQuery }));
+      },
+      scanFile() {
+        this.connection.sendData(JSON.stringify({ type: "scan_file", filename: this.filename.trim() }));
+        this.$root.NotificationsService.success(this.locale[this.$i18n.locale]["scanRequestLoading"]);
+      },
+      requestReport() {
+        this.connection.sendData(JSON.stringify({ type: "request_report", scan_id: 1 }));
+      },
+      resizeTable() {
+        this.maxTableHeight = this.$refs.boxTable.clientHeight - 1;
+      },
+      configLabel(textID, key = "title") {
+        return this.module.locale.config[textID][this.$i18n.locale][key];
       },
     },
   };
