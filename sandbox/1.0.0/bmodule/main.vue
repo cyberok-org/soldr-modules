@@ -153,114 +153,21 @@
         }));
       },
       optionsSchema() {
-        return {
-          type: "object",
-          properties: {
-            package: {
-              type: "string",
-              ui: {
-                label: this.configLabel("b1_cuckoo_package"),
-                columns: 4,
-                widgetConfig: {
-                  autocomplete: {
-                    enumSource: [
-                      { package: "com" },
-                      { package: "cpl" },
-                      { package: "dll" },
-                      { package: "doc" },
-                      { package: "exec" },
-                      { package: "generic" },
-                      { package: "ie" },
-                      { package: "ff" },
-                      { package: "jar" },
-                      { package: "js" },
-                      { package: "jse" },
-                      { package: "hta" },
-                      { package: "hwp" },
-                      { package: "msi" },
-                      { package: "pdf" },
-                      { package: "ppt" },
-                      { package: "ps1" },
-                      { package: "pub" },
-                      { package: "python" },
-                      { package: "vbs" },
-                      { package: "wsf" },
-                      { package: "xls" },
-                      { package: "zip" },
-                    ],
-                    immediateShow: true,
-                    itemTemplate: "\u003cspan\u003e{{item.package}}\u003c/span\u003e",
-                    itemValueField: "package",
-                  },
-                },
-              },
-            },
-            options: {
-              type: "string",
-              ui: {
-                label: this.configLabel("b2_cuckoo_package_options"),
-                columns: 4,
-              },
-            },
-            priority: {
-              rules: {
-                maximum: 3,
-                minimum: 1,
-              },
-              type: "integer",
-              ui: {
-                label: this.configLabel("b3_cuckoo_priority"),
-                columns: 4,
-                widget: "radio",
-                widgetConfig: {
-                  enumSource: [
-                    { label: "Low", value: 1 },
-                    { label: "Mid", value: 2 },
-                    { label: "High", value: 3 },
-                  ],
-                },
-              },
-            },
-            platform: {
-              type: "string",
-              ui: {
-                label: this.configLabel("c1_cuckoo_platform"),
-                columns: 4,
-                widgetConfig: {
-                  autocomplete: {
-                    enumSource: [{ platform: "windows" }, { platform: "darwin" }, { platform: "linux" }],
-                    immediateShow: true,
-                    itemTemplate: "\u003cspan\u003e{{item.platform}}\u003c/span\u003e",
-                    itemValueField: "platform",
-                  },
-                },
-              },
-            },
-            machine: {
-              type: "string",
-              ui: {
-                label: this.configLabel("c2_cuckoo_machine"),
-                columns: 4,
-              },
-            },
-            timeout: {
-              type: "number",
-              ui: {
-                label: this.configLabel("c3_cuckoo_timeout"),
-                columns: 4,
-              },
-            },
-          },
-          value: {
-            package: this.module.current_config.b1_cuckoo_package,
-            options: this.module.current_config.b2_cuckoo_package_options,
-            priority: this.module.current_config.b3_cuckoo_priority,
-            platform: this.module.current_config.c1_cuckoo_platform,
-            machine: this.module.current_config.c2_cuckoo_machine,
-            timeout: this.module.current_config.c3_cuckoo_timeout,
-          },
-          additionalProperties: false,
-        };
+        let schema = JSON.parse(JSON.stringify(this.module.config_schema));
+        // These parameters can't be changed after module configuration.
+        delete schema.properties.a1_cuckoo_url;
+        delete schema.properties.a2_cuckoo_key;
+        delete schema.properties.d1_score_threshold;
+
+        schema.value = {};
+        for (var widgetName in schema.properties) {
+          let widget = schema.properties[widgetName];
+          widget.ui.label = this.configLabel(widgetName);
+          widget.ui.description = this.configLabel(widgetName, "description");
+
+          schema.value[widgetName] = this.module.current_config[widgetName];
+        }
+        return schema;
       },
     },
     methods: {
