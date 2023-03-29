@@ -7,7 +7,7 @@
         class="layout-fill_vertical uk-flex uk-flex-column uk-overflow-hidden"
         v-if="viewMode === 'agent'"
       >
-        <div class="uk-margin limit-length">
+        <div class="uk-margin">
           <el-input
             :placeholder="locale[$i18n.locale]['filePlaceholder']"
             v-model="filename"
@@ -22,6 +22,11 @@
               {{ locale[$i18n.locale]["buttonScan"] }}
             </el-button>
           </el-input>
+          <ncform
+            :form-schema="optionsSchema"
+            form-name="options"
+            v-model="optionsSchema.value"
+          />
         </div>
         <div>
           <el-input
@@ -57,6 +62,25 @@
 <script>
   const name = "cyberok_sandbox";
 
+  function isObject(item) {
+    return item && typeof item === "object" && !Array.isArray(item);
+  }
+
+  function mergeDeep(target, source) {
+    let output = Object.assign({}, target);
+    if (isObject(target) && isObject(source)) {
+      Object.keys(source).forEach((key) => {
+        if (isObject(source[key])) {
+          if (!(key in target)) Object.assign(output, { [key]: source[key] });
+          else output[key] = mergeDeep(target[key], source[key]);
+        } else {
+          Object.assign(output, { [key]: source[key] });
+        }
+      });
+    }
+    return output;
+  }
+
   module.exports = {
     name,
     props: ["protoAPI", "hash", "module", "api", "components", "viewMode"],
@@ -68,6 +92,100 @@
       maxTableHeight: 585,
       timerId: undefined,
       connection: undefined,
+      optionsSchema: {
+        type: "object",
+        properties: {
+          package: {
+            type: "string",
+            ui: {
+              columns: 4,
+              widgetConfig: {
+                autocomplete: {
+                  enumSource: [
+                    { package: "com" },
+                    { package: "cpl" },
+                    { package: "dll" },
+                    { package: "doc" },
+                    { package: "exec" },
+                    { package: "generic" },
+                    { package: "ie" },
+                    { package: "ff" },
+                    { package: "jar" },
+                    { package: "js" },
+                    { package: "jse" },
+                    { package: "hta" },
+                    { package: "hwp" },
+                    { package: "msi" },
+                    { package: "pdf" },
+                    { package: "ppt" },
+                    { package: "ps1" },
+                    { package: "pub" },
+                    { package: "python" },
+                    { package: "vbs" },
+                    { package: "wsf" },
+                    { package: "xls" },
+                    { package: "zip" },
+                  ],
+                  immediateShow: true,
+                  itemTemplate:
+                    "\u003cspan\u003e{{item.package}}\u003c/span\u003e",
+                  itemValueField: "package",
+                },
+              },
+            },
+          },
+          options: {
+            type: "string",
+            ui: { columns: 4 },
+          },
+          priority: {
+            rules: {
+              maximum: 3,
+              minimum: 1,
+            },
+            type: "integer",
+            ui: {
+              columns: 4,
+              widget: "radio",
+              widgetConfig: {
+                enumSource: [
+                  { label: "Low", value: 1 },
+                  { label: "Mid", value: 2 },
+                  { label: "High", value: 3 },
+                ],
+              },
+            },
+          },
+          platform: {
+            type: "string",
+            ui: {
+              columns: 4,
+              widgetConfig: {
+                autocomplete: {
+                  enumSource: [
+                    { platform: "windows" },
+                    { platform: "darwin" },
+                    { platform: "linux" },
+                  ],
+                  immediateShow: true,
+                  itemTemplate:
+                    "\u003cspan\u003e{{item.platform}}\u003c/span\u003e",
+                  itemValueField: "platform",
+                },
+              },
+            },
+          },
+          machine: {
+            type: "string",
+            ui: { columns: 4 },
+          },
+          timeout: {
+            type: "number",
+            ui: { columns: 4 },
+          },
+        },
+        additionalProperties: false,
+      },
       locale: {
         ru: {
           api: "Проверка файлов",
@@ -118,6 +236,7 @@
           this.connection = connection;
           this.connection.subscribe(this.onData, "data");
           this.execSQL();
+          this.initCuckooOptionsForm();
           this.$root.NotificationsService.success(
             `${date} ${this.locale[this.$i18n.locale]["connected"]}`
           );
@@ -175,7 +294,8 @@
           a.click();
         } else if (msg.type == "error") {
           const localized = this.locale[this.$i18n.locale][msg.error.name];
-          const message = localized || `[${msg.error.name}] ${msg.error.message}`;
+          const message =
+            localized || `[${msg.error.name}] ${msg.error.message}`;
           this.$root.NotificationsService.error(message);
         } else {
           this.$root.NotificationsService.error(
@@ -202,6 +322,41 @@
       },
       resizeTable() {
         this.maxTableHeight = this.$refs.boxTable.clientHeight - 1;
+      },
+      configLabel(textID, key = "title") {
+        return this.module.locale.config[textID][this.$i18n.locale][key];
+      },
+      initCuckooOptionsForm() {
+        this.optionsSchema = mergeDeep(this.optionsSchema, {
+          properties: {
+            package: {
+              ui: { label: this.configLabel("b1_cuckoo_package") },
+            },
+            options: {
+              ui: { label: this.configLabel("b2_cuckoo_package_options") },
+            },
+            priority: {
+              ui: { label: this.configLabel("b3_cuckoo_priority") },
+            },
+            platform: {
+              ui: { label: this.configLabel("c1_cuckoo_platform") },
+            },
+            machine: {
+              ui: { label: this.configLabel("c2_cuckoo_machine") },
+            },
+            timeout: {
+              ui: { label: this.configLabel("c3_cuckoo_timeout") },
+            },
+          },
+          value: {
+            package: this.module.current_config.b1_cuckoo_package,
+            options: this.module.current_config.b2_cuckoo_package_options,
+            priority: this.module.current_config.b3_cuckoo_priority,
+            platform: this.module.current_config.c1_cuckoo_platform,
+            machine: this.module.current_config.c2_cuckoo_machine,
+            timeout: this.module.current_config.c3_cuckoo_timeout,
+          },
+        });
       },
     },
   };
