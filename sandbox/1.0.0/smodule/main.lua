@@ -29,6 +29,9 @@ end
 local ScanGetError = function(scan_id, err)
     return Error("scan_id=%s: restoring the scanning task: %s", scan_id, err)
 end
+local ScanNoReportError = function(scan_id)
+    return Error("scan_id=%s: the scanning task contains no report", scan_id)
+end
 local ScanListUnfinishedError = function(err)
     return Error("getting unfinished scanning tasks: %s", err)
 end
@@ -103,6 +106,17 @@ local function receive_file(src, path, name)
         if err then db:scan_set_error(scan_id, err) end
         check(nil, os.remove(path))
     end)
+    return true
+end
+
+function handlers.request_report(src, data)
+    check(src, try(function()
+        local scan, err = db:scan_get(data.scan_id)
+        assert(scan, ScanGetError(data.scan_id, err))
+        assert(scan.report, ScanNoReportError(data.scan_id))
+        __api.send_data_to(src,
+            cjson.encode{type = "receive_report", report = scan.report })
+    end))
     return true
 end
 

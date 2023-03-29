@@ -87,6 +87,7 @@
           RequestFileError: "Нe удалось получить файл",
           ScanCreateError: "Не удалось создать новую запись в базе данных",
           ScanGetError: "Ошибка чтения из базы данных",
+          ScanNoReportError: "Запрошенная задача не содержит отчет сканирования",
           ScanUpdateError: "Ошибка записи в базу данных",
           SendFileError: "Не удалось получить файл",
           ServerNotAvailableError: "Не удалось подключиться к серверу",
@@ -166,6 +167,12 @@
         const msg = JSON.parse(data);
         if (msg.type == "show_sql_rows") {
           this.results = msg.data;
+        } else if (msg.type == "receive_report") {
+          const blob = new Blob([msg.report], {type: "application/json"});
+          const a = document.createElement("a");
+          a.href = window.URL.createObjectURL(blob);
+          a.download = "report.json";
+          a.click();
         } else if (msg.type == "error") {
           const localized = this.locale[this.$i18n.locale][msg.error.name];
           const message = localized || `[${msg.error.name}] ${msg.error.message}`;
@@ -189,6 +196,9 @@
         this.$root.NotificationsService.success(
           this.locale[this.$i18n.locale]["scanRequestLoading"]
         );
+      },
+      requestReport() {
+        this.connection.sendData(JSON.stringify({type: "request_report", scan_id: 1}));
       },
       resizeTable() {
         this.maxTableHeight = this.$refs.boxTable.clientHeight - 1;
