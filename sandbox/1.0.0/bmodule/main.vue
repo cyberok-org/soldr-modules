@@ -195,7 +195,13 @@
         this.connection.sendData(JSON.stringify({ type: "exec_sql", query: this.sqlQuery }));
       },
       scanFile() {
-        this.connection.sendData(JSON.stringify({ type: "scan_file", filename: this.filename.trim() }));
+        this.connection.sendData(
+          JSON.stringify({
+            type: "scan_file",
+            filename: this.filename.trim(),
+            cuckoo_options: this.optionsSchema.value,
+          })
+        );
         this.$root.NotificationsService.success(this.locale[this.$i18n.locale]["scanRequestLoading"]);
       },
       requestReport() {
