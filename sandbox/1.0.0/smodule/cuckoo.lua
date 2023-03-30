@@ -185,18 +185,4 @@ function Cuckoo.verdict(report)
     return verdict
 end
 
----Returns options for Cuckoo from configuration `c`.
----@param c table
----@return CuckooOptions
-function Cuckoo.options(c)
-    return {
-        package  = c.b1_cuckoo_package,
-        options  = c.b2_cuckoo_package_options,
-        priority = c.b3_cuckoo_priority,
-        platform = c.c1_cuckoo_platform,
-        machine  = c.c2_cuckoo_machine,
-        timeout  = c.c3_cuckoo_timeout,
-    }
-end
-
 return Cuckoo

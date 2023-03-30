@@ -19,7 +19,7 @@
               {{ locale[$i18n.locale]["buttonScan"] }}
             </el-button>
           </el-input>
-          <ncform :form-schema="optionsSchema" form-name="options" v-model="optionsSchema.value" />
+          <ncform :form-schema="cuckooOptionsSchema" form-name="options" v-model="cuckooOptionsSchema.value" />
         </div>
         <div>
           <el-input
@@ -167,21 +167,22 @@
           }, 0),
         }));
       },
-      optionsSchema() {
-        let schema = JSON.parse(JSON.stringify(this.module.config_schema));
-        // These parameters can't be changed after module configuration.
-        delete schema.properties.a1_cuckoo_url;
-        delete schema.properties.a2_cuckoo_key;
-        delete schema.properties.d1_score_threshold;
-
-        schema.value = {};
-        for (var widgetName in schema.properties) {
-          let widget = schema.properties[widgetName];
+      cuckooOptionsSchema() {
+        const appendWidgetFromConfig = (schema, widgetName) => {
+          let widget = structuredClone(this.module.config_schema.properties[widgetName])
           widget.ui.label = this.configLabel(widgetName);
           widget.ui.description = this.configLabel(widgetName, "description");
-
+          schema.properties[widgetName] = widget;
           schema.value[widgetName] = this.module.current_config[widgetName];
         }
+
+        let schema = {type: "object", properties: {}, value: {}}
+        appendWidgetFromConfig(schema, "b1_cuckoo_package");
+        appendWidgetFromConfig(schema, "b2_cuckoo_package_options");
+        appendWidgetFromConfig(schema, "b3_cuckoo_priority");
+        appendWidgetFromConfig(schema, "c1_cuckoo_platform");
+        appendWidgetFromConfig(schema, "c2_cuckoo_machine");
+        appendWidgetFromConfig(schema, "c3_cuckoo_timeout");
         return schema;
       },
     },
@@ -210,13 +211,18 @@
         this.connection.sendData(JSON.stringify({ type: "exec_sql", query: this.sqlQuery }));
       },
       scanFile() {
-        this.connection.sendData(
-          JSON.stringify({
-            type: "scan_file",
-            filename: this.filename.trim(),
-            cuckoo_options: this.optionsSchema.value,
-          })
-        );
+        this.connection.sendData(JSON.stringify({
+          type: "scan_file",
+          filename: this.filename.trim(),
+          cuckoo_options: {
+            package:  this.cuckooOptionsSchema.value.b1_cuckoo_package,
+            options:  this.cuckooOptionsSchema.value.b2_cuckoo_package_options,
+            priority: this.cuckooOptionsSchema.value.b3_cuckoo_priority,
+            platform: this.cuckooOptionsSchema.value.c1_cuckoo_platform,
+            machine:  this.cuckooOptionsSchema.value.c2_cuckoo_machine,
+            timeout:  this.cuckooOptionsSchema.value.c3_cuckoo_timeout,
+          },
+        }));
         this.$root.NotificationsService.success(this.locale[this.$i18n.locale]["scanRequestLoading"]);
       },
       requestReport() {

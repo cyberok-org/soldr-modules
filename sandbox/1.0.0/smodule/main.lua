@@ -82,7 +82,7 @@ function handlers.scan_file(src, data)
     local scan_id, err
     _, err = check(src, try(function()
         local agent = assert(get_agent(src))
-        local options = cuckoo.options(data.cuckoo_options) or cuckoo_options
+        local options = data.cuckoo_options or cuckoo_options
         scan_id, err = db:scan_new(agent.ID, data.filename, options)
         assert(scan_id, ScanCreateError(err))
         assert(request_file(agent.Dst, scan_id, data.filename))
@@ -144,7 +144,14 @@ controls.default = function() return true end
 function controls.update_config()
     local c = cjson.decode(__config.get_current_config())
     cuckoo = Cuckoo:new(c.a1_cuckoo_url, c.a2_cuckoo_key)
-    cuckoo_options = cuckoo.options(c)
+    cuckoo_options = {
+        package  = c.b1_cuckoo_package,
+        options  = c.b2_cuckoo_package_options,
+        priority = c.b3_cuckoo_priority,
+        platform = c.c1_cuckoo_platform,
+        machine  = c.c2_cuckoo_machine,
+        timeout  = c.c3_cuckoo_timeout,
+    }
     return true
 end
 
