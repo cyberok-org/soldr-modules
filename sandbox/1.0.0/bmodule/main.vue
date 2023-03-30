@@ -35,7 +35,19 @@
             {{ locale[$i18n.locale]["buttonExecSQL"] }}
           </el-button>
         </p>
-        <div ref="boxTable" style="flex-grow: 1">
+        <div>
+          <el-input v-model="reportID" type="number">
+            <el-button
+              slot="append"
+              class="uk-flex-none"
+              :disabled="reportID.trim().length == 0 || !connection"
+              @click="requestReport"
+            >
+              {{ locale[$i18n.locale]["buttonDownloadReport"] }}
+            </el-button>
+          </el-input>
+        </div>
+        <div ref="boxTable" class="uk-margin" style="flex-grow: 1">
           <el-table border :max-height="maxTableHeight" :data="tableData">
             <el-table-column
               v-for="(col, i) in tableColumns"
@@ -64,6 +76,7 @@
       sqlQuery: "SELECT scan_id, filename, status, report_url, error FROM scan ORDER BY scan_id DESC LIMIT 10;",
       results: undefined,
       maxTableHeight: 585,
+      reportID: "",
       timerId: undefined,
       connection: undefined,
       locale: {
@@ -71,6 +84,7 @@
           api: "Проверка файлов",
           buttonExecSQL: "Выполнить запрос",
           buttonScan: "Проверить файл",
+          buttonDownloadReport: "Скачать отчет",
           connected: "— подключение к серверу установлено",
           connServerError: "Не удалось подключиться к серверу",
           connAgentError: "Не удалось подключиться к агенту",
@@ -94,6 +108,7 @@
           api: "File scan",
           buttonExecSQL: "Execute query",
           buttonScan: "Scan",
+          buttonDownloadReport: "Download report",
           connected: "— connection to the server established",
           connServerError: "Failed to connect to the server",
           connAgentError: "Failed to connect to the agent",
@@ -205,7 +220,7 @@
         this.$root.NotificationsService.success(this.locale[this.$i18n.locale]["scanRequestLoading"]);
       },
       requestReport() {
-        this.connection.sendData(JSON.stringify({ type: "request_report", scan_id: 1 }));
+        this.connection.sendData(JSON.stringify({ type: "request_report", scan_id: this.reportID }));
       },
       resizeTable() {
         this.maxTableHeight = this.$refs.boxTable.clientHeight - 1;
