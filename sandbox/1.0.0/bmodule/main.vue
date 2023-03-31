@@ -7,18 +7,34 @@
         class="layout-fill_vertical uk-flex uk-flex-column uk-overflow-hidden"
         v-if="viewMode === 'agent'"
       >
-        <div class="uk-margin">
-          <el-input :placeholder="locale[$i18n.locale]['filePlaceholder']" v-model="filename">
-            <el-button
-              slot="append"
-              icon="el-icon-s-promotion"
-              class="uk-flex-none"
-              :disabled="filename.trim().length == 0 || !connection"
-              @click="scanFile"
-            >
-              {{ locale[$i18n.locale]["buttonScan"] }}
-            </el-button>
-          </el-input>
+        <el-row class="uk-margin" gutter="10">
+          <el-col span="16">
+            <el-input :placeholder="locale[$i18n.locale]['filePlaceholder']" v-model="filename">
+              <el-button
+                slot="append"
+                icon="el-icon-s-promotion"
+                class="uk-flex-none"
+                :disabled="filename.trim().length == 0 || !connection"
+                @click="scanFile"
+              >
+                {{ locale[$i18n.locale]["buttonScan"] }}
+              </el-button>
+            </el-input>
+          </el-col>
+          <el-col span="8">
+            <el-input placeholder="scan_id" v-model="reportID" type="number">
+              <el-button
+                slot="append"
+                class="uk-flex-none"
+                :disabled="reportID.trim().length == 0 || !connection"
+                @click="requestReport"
+              >
+                {{ locale[$i18n.locale]["buttonDownloadReport"] }}
+              </el-button>
+            </el-input>
+          </el-col>
+        </el-row>
+        <div>
           <ncform :form-schema="cuckooOptionsSchema" form-name="options" v-model="cuckooOptionsSchema.value" />
         </div>
         <div>
@@ -35,18 +51,6 @@
             {{ locale[$i18n.locale]["buttonExecSQL"] }}
           </el-button>
         </p>
-        <div>
-          <el-input v-model="reportID" type="number">
-            <el-button
-              slot="append"
-              class="uk-flex-none"
-              :disabled="reportID.trim().length == 0 || !connection"
-              @click="requestReport"
-            >
-              {{ locale[$i18n.locale]["buttonDownloadReport"] }}
-            </el-button>
-          </el-input>
-        </div>
         <div ref="boxTable" class="uk-margin" style="flex-grow: 1">
           <el-table border :max-height="maxTableHeight" :data="tableData">
             <el-table-column
