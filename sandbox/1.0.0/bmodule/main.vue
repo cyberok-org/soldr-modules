@@ -1,71 +1,63 @@
 <template>
-  <div>
-    <el-tabs tab-position="left" v-model="leftTab">
-      <el-tab-pane
-        name="api"
-        :label="locale[$i18n.locale]['api']"
-        class="layout-fill_vertical uk-flex uk-flex-column uk-overflow-hidden"
-        v-if="viewMode === 'agent'"
-      >
-        <el-row class="uk-margin" gutter="10">
-          <el-col span="16">
-            <el-input :placeholder="locale[$i18n.locale]['filePlaceholder']" v-model="filename">
-              <el-button
-                slot="append"
-                icon="el-icon-s-promotion"
-                class="uk-flex-none"
-                :disabled="filename.trim().length == 0 || !connection"
-                @click="scanFile"
-              >
-                {{ locale[$i18n.locale]["buttonScan"] }}
-              </el-button>
-            </el-input>
-          </el-col>
-          <el-col span="8">
-            <el-input placeholder="scan_id" v-model="reportID" type="number">
-              <el-button
-                slot="append"
-                class="uk-flex-none"
-                :disabled="reportID.trim().length == 0 || !connection"
-                @click="requestReport"
-              >
-                {{ locale[$i18n.locale]["buttonDownloadReport"] }}
-              </el-button>
-            </el-input>
-          </el-col>
-        </el-row>
-        <div>
-          <ncform :form-schema="cuckooOptionsSchema" form-name="options" v-model="cuckooOptionsSchema.value" />
-        </div>
-        <div>
-          <el-input
-            type="textarea"
-            :autosize="{ minRows: 3, maxRows: 8 }"
-            :placeholder="locale[$i18n.locale]['queryPlaceholder']"
-            v-model="sqlQuery"
-            @keyup.ctrl.enter.native="execSQL"
-          />
-        </div>
-        <p class="uk-margin buttons">
-          <el-button type="primary" @click="execSQL" :disabled="!connection">
-            {{ locale[$i18n.locale]["buttonExecSQL"] }}
+  <div v-if="viewMode === 'agent'">
+    <el-row class="uk-margin" gutter="10">
+      <el-col span="16">
+        <el-input :placeholder="locale[$i18n.locale]['filePlaceholder']" v-model="filename">
+          <el-button
+            slot="append"
+            icon="el-icon-s-promotion"
+            class="uk-flex-none"
+            :disabled="filename.trim().length == 0 || !connection"
+            @click="scanFile"
+          >
+            {{ locale[$i18n.locale]["buttonScan"] }}
           </el-button>
-        </p>
-        <div ref="boxTable" class="uk-margin" style="flex-grow: 1">
-          <el-table border :max-height="maxTableHeight" :data="tableData">
-            <el-table-column
-              v-for="(col, i) in tableColumns"
-              :key="i"
-              :prop="col.name"
-              :label="col.name"
-              :width="col.width"
-              sortable
-            />
-          </el-table>
-        </div>
-      </el-tab-pane>
-    </el-tabs>
+        </el-input>
+      </el-col>
+      <el-col span="8">
+        <el-input placeholder="scan_id" v-model="scanID" type="number">
+          <el-button
+            slot="append"
+            class="uk-flex-none"
+            :disabled="scanID.trim().length == 0 || !connection"
+            @click="requestReport"
+          >
+            {{ locale[$i18n.locale]["buttonDownloadReport"] }}
+          </el-button>
+        </el-input>
+      </el-col>
+    </el-row>
+    <div>
+      <ncform :form-schema="cuckooOptionsSchema" form-name="options" v-model="cuckooOptionsSchema.value" />
+    </div>
+    <div>
+      <el-input
+        type="textarea"
+        :autosize="{ minRows: 1, maxRows: 8 }"
+        :placeholder="locale[$i18n.locale]['queryPlaceholder']"
+        v-model="sqlQuery"
+        @keyup.ctrl.enter.native="execSQL"
+      />
+    </div>
+    <p class="uk-margin buttons">
+      <el-button type="primary" @click="execSQL" :disabled="!connection">
+        {{ locale[$i18n.locale]["buttonExecSQL"] }}
+      </el-button>
+    </p>
+    <div ref="boxTable" class="uk-margin">
+      <el-table border :data="tableData">
+        <el-table-column
+          v-for="(col, i) in tableColumns"
+          :key="i"
+          :prop="col.name"
+          :label="col.name"
+          :width="col.width"
+          sortable
+        />
+      </el-table>
+    </div>
   </div>
+  <el-result v-else icon="info" title="locale[$i18n.locale].groupManagementUnsupported" />
 </template>
 
 <script>
@@ -81,8 +73,7 @@
         "SELECT scan_id, updated_at, filename, status, report_url, error FROM scan ORDER BY updated_at DESC LIMIT 10;",
       results: undefined,
       maxTableHeight: 585,
-      reportID: "",
-      timerId: undefined,
+      scanID: "",
       connection: undefined,
       locale: {
         ru: {
@@ -96,6 +87,7 @@
           filePlaceholder: "Путь к файлу",
           queryPlaceholder: "SQL-запрос для выборки",
           scanRequestLoading: "Запрос был отправлен",
+          groupManagementUnsupported: "Групповое управление не поддерживается",
           unknownMessageError: "Получен неизвестный тип сообщения",
           AgentNotAvailableError: "Не удалось подключиться к агенту",
           CuckooCreateTaskError: "Сервер Cuckoo не доступен / вернул ошибку",
@@ -120,6 +112,7 @@
           filePlaceholder: "File path",
           queryPlaceholder: "SQL query for selection",
           scanRequestLoading: "Request has been sent",
+          groupManagementUnsupported: "Group management is not supported",
           unknownMessageError: "Received unknown message type",
         },
       },
@@ -130,8 +123,6 @@
       }
       this.protoAPI.connect().then(
         (connection) => {
-          window.addEventListener("resize", this.resizeTable);
-          this.timerId = window.setInterval(this.resizeTable, 500);
           const date = new Date().toLocaleTimeString();
           this.connection = connection;
           this.connection.subscribe(this.onData, "data");
@@ -142,13 +133,6 @@
           this.$root.NotificationsService.error(this.locale[this.$i18n.locale]["connServerError"]);
         }
       );
-    },
-    destroyed() {
-      if (this.viewMode != "agent") {
-        return;
-      }
-      window.removeEventListener("resize", this.resizeTable);
-      window.clearInterval(this.timerId);
     },
     mounted() {
       this.leftTab = this.viewMode === "agent" ? "api" : undefined;
@@ -233,10 +217,7 @@
         this.$root.NotificationsService.success(this.locale[this.$i18n.locale]["scanRequestLoading"]);
       },
       requestReport() {
-        this.connection.sendData(JSON.stringify({ type: "request_report", scan_id: this.reportID }));
-      },
-      resizeTable() {
-        this.maxTableHeight = this.$refs.boxTable.clientHeight - 1;
+        this.connection.sendData(JSON.stringify({ type: "request_report", scan_id: this.scanID }));
       },
       configLabel(textID, key = "title") {
         return this.module.locale.config[textID][this.$i18n.locale][key];
