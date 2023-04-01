@@ -37,7 +37,7 @@ end)
 -- Action: cyberok_sandbox_scan
 function handlers.cyberok_sandbox_scan(src, data)
     local dst = check(get_server_dst()); if dst then
-        local ok = __api.send_data_to(dst, {
+        local ok = __api.send_data_to(dst, cjson.encode{
             type     = "scan_file",
             filename = data.data["object.fullpath"],
         })
