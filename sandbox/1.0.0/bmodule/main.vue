@@ -67,12 +67,10 @@
     name,
     props: ["protoAPI", "hash", "module", "api", "components", "viewMode"],
     data: () => ({
-      leftTab: undefined,
       filename: "",
       sqlQuery:
         "SELECT scan_id, updated_at, filename, status, report_url, error FROM scan ORDER BY updated_at DESC LIMIT 10;",
       results: undefined,
-      maxTableHeight: 585,
       scanID: "",
       connection: undefined,
       locale: {
@@ -135,7 +133,11 @@
       );
     },
     mounted() {
-      this.leftTab = this.viewMode === "agent" ? "api" : undefined;
+      // https://github.com/vxcontrol/soldr/issues/105
+      let appViews = document.getElementsByTagName("soldr-module-interactive-part");
+      for (appView of appViews) {
+        appView.classList.remove("layout-fill", "scrollable-y", "layout-padding-l");
+      }
     },
     computed: {
       tableData() {
