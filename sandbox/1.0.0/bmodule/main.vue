@@ -57,7 +57,7 @@
       </el-table>
     </div>
   </div>
-  <el-result v-else icon="info" title="locale[$i18n.locale].groupManagementUnsupported" />
+  <el-result v-else icon="info" :title="locale[$i18n.locale].groupManagementUnsupported" />
 </template>
 
 <script>
