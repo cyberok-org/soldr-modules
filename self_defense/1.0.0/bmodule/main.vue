@@ -1,5 +1,5 @@
 <template>
-  <el-result icon="info" :title="locale.managementIsUnsupported" />
+  <el-result icon="info" :title="strings.managementIsUnsupported" />
 </template>
 
 <script>
@@ -10,16 +10,15 @@ module.exports = {
   props: ["protoAPI", "hash", "module", "api", "components", "viewMode"],
   data: () => ({}),
   computed: {
-    locale() {
-      const strings = {
+    strings() {
+      return {
         ru: {
           managementIsUnsupported: "Управление не поддерживается",
         },
         en: {
           managementIsUnsupported: "Management is not supported",
         },
-      };
-      return strings[this.$i18n.locale];
+      }[this.$i18n.locale];
     },
   },
 };
