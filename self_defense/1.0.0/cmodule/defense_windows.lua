@@ -2,7 +2,7 @@ require("waffi.headers.windows")
 local lk32 = require("waffi.windows.kernel32")
 local ffi = require("ffi")
 
-local profile = {}
+local defense = {}
 
 --- Gets the last error as a string.
 ---@return string error
@@ -69,7 +69,7 @@ BOOL GetProcessMitigationPolicy(HANDLE hProcess,
 ---@param config table configuration to apply
 ---@return table|nil old configuration
 ---@return string|nil error string explaining the problem, if any
-function profile.mitigation(name, config)
+function defense.mitigation(name, config)
     local policy = mitigation_policies[name]
     local buf = ffi.new(policy.schema)
     local len = ffi.sizeof(policy.schema)
@@ -94,12 +94,12 @@ end
 ---the previous configuration.
 ---@return table|nil old configuration
 ---@return string|nil error string explaining the problem, if any
-function profile.apply()
-    return profile.mitigation("data_execution_prevention", {
+function defense.apply()
+    return defense.mitigation("data_execution_prevention", {
         Enable = 1,
         Permanent = 1,
         DisableAtlThunkEmulation = 1,
     })
 end
 
-return profile
+return defense

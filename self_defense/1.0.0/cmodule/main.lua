@@ -1,10 +1,10 @@
-local profile = require("defender_windows")
+local defense = require("defense_windows")
 
 ---Activates the self-defense of the current process.
 ---@return boolean|nil ok whether the self-defense was successfully activated
 ---@return string|nil error string explaining the problem, if any
 local function activate()
-    local old_profile, err = profile.apply()
+    local old_profile, err = defense.apply()
     if not old_profile then
         __log.errorf("failed to activate self-defense: %s", err)
         return nil, err
