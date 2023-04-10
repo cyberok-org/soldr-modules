@@ -1,25 +1,24 @@
-local defender = require("defender_windows")
+local profile = require("defender_windows")
 
 ---Activates the self-defense of the current process.
 ---@return boolean|nil ok whether the self-defense was successfully activated
 ---@return string|nil error string explaining the problem, if any
 local function activate()
-    local ok, err = defender.activate()
-    if not ok then
+    local old_profile, err = profile.apply()
+    if not old_profile then
         __log.errorf("failed to activate self-defense: %s", err)
+        return nil, err
     end
-    return ok, err
+    -- TODO: store old profile if it wasn't stored yet
+    return true
 end
 
 ---Deactivates the self-protection of the current process.
 ---@return boolean|nil ok whether the self-defense was successfully deactivated
 ---@return string|nil error string explaining the problem, if any
 local function deactivate()
-    local ok, err = defender.deactivate()
-    if not ok then
-        __log.errorf("failed to deactivate self-defense: %s", err)
-    end
-    return ok, err
+    -- TODO: restore old profile
+    return true
 end
 
 ---Handles control messages.
