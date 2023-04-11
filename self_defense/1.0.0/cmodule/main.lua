@@ -4,7 +4,7 @@ local defense = require("defense_windows")
 ---@return boolean|nil ok whether the self-defense was successfully activated
 ---@return string|nil error string explaining the problem, if any
 local function activate()
-    local old_profile, err = defense.apply()
+    local old_profile, err = defense.apply(defense.HARDENED_PROFILE)
     if not old_profile then
         __log.errorf("failed to activate self-defense: %s", err)
         return nil, err
