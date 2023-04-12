@@ -5,18 +5,16 @@ local defense = {}
 ---@return table|nil old configuration
 ---@return string|nil error string explaining the problem, if any
 function defense.apply(profile, strategies)
-    local old_profile = { strategies = {} }
-    for _, strategy_name in ipairs(profile.strategies) do
-        local strategy = strategies[strategy_name]
-        assert(strategy, string.format("unknown strategy %s", strategy_name))
-
-        local old_config, err = strategy.apply(profile[strategy_name])
-        if not old_config then
-            -- TODO: rollback applied strategies and return error
-            return nil, err
+    local old_profile = {}
+    for _, strategy in ipairs(strategies) do
+        if profile[strategy.name] then
+            local old_config, err = strategy.apply(profile[strategy.name])
+            if not old_config then
+                -- TODO: rollback applied strategies and return error
+                return nil, err
+            end
+            old_profile[strategy.name] = old_config
         end
-        table.insert(old_profile.strategies, strategy_name)
-        old_profile[strategy_name] = old_config
     end
     return old_profile
 end
