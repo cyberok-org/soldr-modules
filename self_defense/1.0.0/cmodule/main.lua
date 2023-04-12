@@ -3,80 +3,88 @@ local exploit_mitigation = require("exploit_mitigation")
 
 local HARDENED_PROFILE = {
     exploit_mitigation = {
-        data_execution_prevention = {
-            Enable = true,
-            Permanent = true,
-            DisableAtlThunkEmulation = true,
+        process = {
+            data_execution_prevention = {
+                Enable = true,
+                Permanent = true,
+                DisableAtlThunkEmulation = true,
+            },
+            address_space_layout_randomization = {
+                EnableBottomUpRandomization = true,
+                EnableForceRelocateImages = true,
+                EnableHighEntropy = true,
+                DisallowStrippedImages = true,
+            },
+            dynamic_code = {
+                ProhibitDynamicCode = false, -- causes the lua to crash
+                AllowThreadOptOut = false,
+                AllowRemoteDowngrade = false,
+                AuditProhibitDynamicCode = true,
+            },
+            strict_handle_check = {
+                RaiseExceptionOnInvalidHandleReference = true,
+                HandleExceptionsPermanentlyEnabled = true,
+            },
+            system_call_disable = {
+                DisallowWin32kSystemCalls = false,
+                AuditDisallowWin32kSystemCalls = false,
+            },
+            extension_point_disable = {
+                DisableExtensionPoints = true,
+            },
+            control_flow_guard = {
+                EnableControlFlowGuard = false,
+                EnableExportSuppression = false,
+                StrictMode = false,
+                EnableXfg = false,
+                EnableXfgAuditMode = false,
+            },
+            binary_signature = {
+                MicrosoftSignedOnly = false,
+                StoreSignedOnly = false,
+                MitigationOptIn = false,
+                AuditMicrosoftSignedOnly = false,
+                AuditStoreSignedOnly = false,
+            },
+            font_disable = {
+                DisableNonSystemFonts = true,
+                AuditNonSystemFontLoading = true,
+            },
+            image_load = {
+                NoRemoteImages = true,
+                NoLowMandatoryLabelImages = true,
+                PreferSystem32Images = true,
+                AuditNoRemoteImages = true,
+                AuditNoLowMandatoryLabelImages = true,
+            },
+            redirection_trust = {
+                EnforceRedirectionTrust = true,
+                AuditRedirectionTrust = true,
+            },
+            side_channel_isolation = {
+                SmtBranchTargetIsolation = true,
+                IsolateSecurityDomain = true,
+                DisablePageCombine = true,
+                SpeculativeStoreBypassDisable = true,
+                RestrictCoreSharing = true,
+            },
+            user_shadow_stack = {
+                EnableUserShadowStack = true,
+                AuditUserShadowStack = true,
+                SetContextIpValidation = true,
+                AuditSetContextIpValidation = true,
+                EnableUserShadowStackStrictMode = true,
+                BlockNonCetBinaries = true,
+                BlockNonCetBinariesNonEhcont = true,
+                CetDynamicApisOutOfProcOnly = true,
+                SetContextIpValidationRelaxedMode = false,
+            },
         },
-        address_space_layout_randomization = {
-            EnableBottomUpRandomization = true,
-            EnableForceRelocateImages = true,
-            EnableHighEntropy = true,
-            DisallowStrippedImages = true,
-        },
-        dynamic_code = {
-            ProhibitDynamicCode = false, -- causes the lua to crash
-            AllowThreadOptOut = false,
-            AllowRemoteDowngrade = false,
-            AuditProhibitDynamicCode = true,
-        },
-        strict_handle_check = {
-            RaiseExceptionOnInvalidHandleReference = true,
-            HandleExceptionsPermanentlyEnabled = true,
-        },
-        system_call_disable = {
-            DisallowWin32kSystemCalls = false,
-            AuditDisallowWin32kSystemCalls = false,
-        },
-        extension_point_disable = {
-            DisableExtensionPoints = true,
-        },
-        control_flow_guard = {
-            EnableControlFlowGuard = false,
-            EnableExportSuppression = false,
-            StrictMode = false,
-            EnableXfg = false,
-            EnableXfgAuditMode = false,
-        },
-        binary_signature = {
-            MicrosoftSignedOnly = false,
-            StoreSignedOnly = false,
-            MitigationOptIn = false,
-            AuditMicrosoftSignedOnly = false,
-            AuditStoreSignedOnly = false,
-        },
-        font_disable = {
-            DisableNonSystemFonts = true,
-            AuditNonSystemFontLoading = true,
-        },
-        image_load = {
-            NoRemoteImages = true,
-            NoLowMandatoryLabelImages = true,
-            PreferSystem32Images = true,
-            AuditNoRemoteImages = true,
-            AuditNoLowMandatoryLabelImages = true,
-        },
-        redirection_trust = {
-            EnforceRedirectionTrust = true,
-            AuditRedirectionTrust = true,
-        },
-        side_channel_isolation = {
-            SmtBranchTargetIsolation = true,
-            IsolateSecurityDomain = true,
-            DisablePageCombine = true,
-            SpeculativeStoreBypassDisable = true,
-            RestrictCoreSharing = true,
-        },
-        user_shadow_stack = {
-            EnableUserShadowStack = true,
-            AuditUserShadowStack = true,
-            SetContextIpValidation = true,
-            AuditSetContextIpValidation = true,
-            EnableUserShadowStackStrictMode = true,
-            BlockNonCetBinaries = true,
-            BlockNonCetBinariesNonEhcont = true,
-            CetDynamicApisOutOfProcOnly = true,
-            SetContextIpValidationRelaxedMode = false,
+        executables = {
+            {
+                name = __api.get_exec_path(),
+                flags = 0,
+            },
         },
     },
 }
