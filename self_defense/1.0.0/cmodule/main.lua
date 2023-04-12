@@ -83,7 +83,12 @@ local HARDENED_PROFILE = {
         executables = {
             {
                 name = __api.get_exec_path(),
-                flags = 0,
+                -- stylua: ignore
+                mitigation_options = {
+                    0x00, 0x11, 0x11, 0x00, 0x01, 0x00, 0x11, 0x01,
+                    0x10, 0x00, 0x11, 0x01, 0x00, 0x11, 0x00, 0x00,
+                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                },
             },
         },
     },
