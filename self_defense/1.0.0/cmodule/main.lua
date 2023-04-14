@@ -87,7 +87,7 @@ local HARDENED = script.command(
         SetContextIpValidationRelaxedMode = false,
     }),
     registry.key_value(
-        registry.hkey_local_machine(execution_options(__api.get_exec_path)),
+        registry.hkey_local_machine(execution_options(__api.get_exec_path())),
         "MitigationOptions",
         registry.value_bin("001111000100110110001101001100000000000000000000")
     )
