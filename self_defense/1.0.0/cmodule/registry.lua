@@ -29,30 +29,28 @@ end
 
 ---@class RegValue
 ---@field package type integer
----@field package value any
+---@field package data ffi.cdata*
+---@field package size integer
 
 ---@class KeyValue: Command
 ---@field private path RegPath
----@field private key any
+---@field private key string
 ---@field private value? RegValue
 local KeyValue = {}
 
 ---Creates and returns a new `KeyValue` instance.
 ---@param path RegPath
----@param key any
----@param value? RegValue
+---@param key string
+---@param val? RegValue
 ---@return KeyValue
-function KeyValue:new(path, key, value)
-    assert(type(path) == "table", "path must be table")
-    assert(type(key) == "string", "key must be string")
-    assert(type(value) == "table", "value must be table")
+function KeyValue:new(path, key, val)
     local cmd = script.command()
     setmetatable(cmd, self)
     self.__index = self
     ---@cast cmd KeyValue
     cmd.path = path
     cmd.key = key
-    cmd.value = value
+    cmd.value = val
     return cmd
 end
 
@@ -64,20 +62,78 @@ local function winerror_tostring(err)
     return tostring(err)
 end
 
----Sets registry `subkey` to the specified `value` returning undo command.
+local function get_key_value(path, key)
+    local RRF_RT_ANY = 0x0000ffff
+    local value_type = ffi.new("DWORD[1]")
+    local value_size = ffi.new("DWORD[1]")
+    local reg_get_val = function(value_data)
+        return adv32.RegGetValueW(
+            path.tree,
+            path.path,
+            key,
+            RRF_RT_ANY,
+            value_type,
+            value_data,
+            value_size
+        )
+    end
+    local err = reg_get_val()
+    if err == lk32.ERROR_FILE_NOT_FOUND then
+        return nil
+    elseif err ~= lk32.ERROR_SUCCESS then
+        return nil, winerror_tostring(err)
+    end
+    local value_data = ffi.new("uint8_t[?]", value_size[0])
+    err = reg_get_val(value_data)
+    if err ~= lk32.ERROR_SUCCESS then
+        return nil, winerror_tostring(err)
+    end
+    return { type = value_type[1], data = value_data, size = value_size[0] }
+end
+
+---Sets registry `subkey` to the specified `value`, returning undo command.
 ---@return Command|nil # Undo command
 ---@return error|nil   # Error string, if any
 function KeyValue:run()
-    return KeyValue:new(self.path, self.key, self.value)
+    local wkey = registry.utf8_to_wide_char(self.key)
+    local undo_value, err = get_key_value(self.path, wkey)
+    if err and not undo_value then
+        return nil, err
+    end
+    if self.value then
+        err = adv32.RegSetKeyValueW(
+            self.path.tree,
+            self.path.path,
+            wkey,
+            self.value.type,
+            self.value.data,
+            self.value.size
+        )
+        if err ~= lk32.ERROR_SUCCESS then
+            return nil, winerror_tostring(err)
+        end
+    else
+        err = adv32.RegDeleteKeyValueW(self.path.tree, self.path.path, wkey)
+        if err ~= lk32.ERROR_SUCCESS and err ~= lk32.ERROR_FILE_NOT_FOUND then
+            return nil, winerror_tostring(err)
+        end
+    end
+    return KeyValue:new(self.path, self.key, undo_value)
 end
 
 ---Creates and returns a new `KeyValue` instance.
 ---@param path RegPath
 ---@param key string
----@param value? RegValue
+---@param val? RegValue
 ---@return KeyValue
-function registry.key_value(path, key, value)
-    return KeyValue:new(path, key, value)
+function registry.key_value(path, key, val)
+    assert(type(path) == "table", "path must be table")
+    assert(type(key) == "string", "key must be string")
+    assert(not val or type(val) == "table", "value must be table")
+    assert(not val or type(val.type) == "number", "value.type must be number")
+    assert(not val or type(val.data) == "cdata", "value.data must be cdata")
+    assert(not val or type(val.size) == "number", "value.size must be number")
+    return KeyValue:new(path, key, val)
 end
 
 ---Builds and returns registry path for the specified `subkey` in
@@ -104,9 +160,8 @@ function registry.value_bin(hex)
         local byte = tonumber(hex_byte, 16)
         table.insert(bytes, byte)
     end
-    local bin = ffi.new("BYTE[?]", #bytes, bytes)
-    local RRF_RT_REG_BINARY = 0x00000008
-    return { type = RRF_RT_REG_BINARY, value = bin }
+    local bin = ffi.new("uint8_t[?]", #bytes, bytes)
+    return { type = adv32.REG_BINARY, data = bin, size = #bytes }
 end
 
 return registry

@@ -7,52 +7,96 @@ ffi.cdef([[
     int lstrcmpW(const wchar_t* lpString1, const wchar_t* lpString2);
 ]])
 
+local function get_test_path_key_value()
+    local path = {
+        tree = ffi.cast("HKEY", adv32.HKEY_CURRENT_USER),
+        path = registry.utf8_to_wide_char("SOFTWARE\\Test"),
+    }
+    local key = "TestKey"
+    local value = {
+        type = adv32.REG_BINARY,
+        data = ffi.new("uint8_t[1]"),
+        size = 1,
+    }
+    return path, key, value
+end
+
 describe("key_value", function()
     it("creates KeyValue instance with path, key, and value", function()
-        local path = {
-            tree = ffi.cast("HKEY", adv32.HKEY_LOCAL_MACHINE),
-            path = registry.utf8_to_wide_char("SOFTWARE\\Test"),
-        }
-        local key = "TestKey"
-        local value = { type = 0x00000008, value = "SomeValue" }
+        local path, key, value = get_test_path_key_value()
         local kv = registry.key_value(path, key, value)
 
         assert.are.same(path, kv.path)
-        assert.are.same(key, kv.key)
+        assert.equal(key, kv.key)
         assert.are.same(value, kv.value)
     end)
-
     it("throws error if path is not a table", function()
+        local _, key, value = get_test_path_key_value()
         local path = "invalid_path"
-        local key = "TestKey"
-        local value = { type = 0x00000008, value = "SomeValue" }
         assert.has_error(function()
             registry.key_value(path, key, value)
         end, "path must be table")
     end)
-
     it("throws error if key is not a string", function()
-        local path = {
-            tree = ffi.cast("HKEY", adv32.HKEY_LOCAL_MACHINE),
-            path = registry.utf8_to_wide_char("SOFTWARE\\Test"),
-        }
+        local path, _, value = get_test_path_key_value()
         local key = 42
-        local value = { type = 0x00000008, value = "SomeValue" }
         assert.has_error(function()
             registry.key_value(path, key, value)
         end, "key must be string")
     end)
-
     it("throws error if value is not a table", function()
-        local path = {
-            tree = ffi.cast("HKEY", adv32.HKEY_LOCAL_MACHINE),
-            path = registry.utf8_to_wide_char("SOFTWARE\\Test"),
-        }
-        local key = "TestKey"
+        local path, key, _ = get_test_path_key_value()
         local value = "invalid_value"
         assert.has_error(function()
             registry.key_value(path, key, value)
         end, "value must be table")
+    end)
+    it("throws error if value.type is not a number", function()
+        local path, key, value = get_test_path_key_value()
+        value.type = "invalid_value_type"
+        assert.has_error(function()
+            registry.key_value(path, key, value)
+        end, "value.type must be number")
+    end)
+    it("throws error if value.data is not a cdata", function()
+        local path, key, value = get_test_path_key_value()
+        value.data = "invalid_value_data"
+        assert.has_error(function()
+            registry.key_value(path, key, value)
+        end, "value.data must be cdata")
+    end)
+    it("throws error if value.size is not a number", function()
+        local path, key, value = get_test_path_key_value()
+        value.size = "invalid_value_data"
+        assert.has_error(function()
+            registry.key_value(path, key, value)
+        end, "value.size must be number")
+    end)
+end)
+
+describe("KeyValue:run", function()
+    it("returns error if key cannot be accessed", function()
+        local path, key, value = get_test_path_key_value()
+        path.tree = ffi.cast("HKEY", 3117)
+
+        local kv = registry.key_value(path, key, value)
+        local undo, err = kv:run()
+
+        assert.is_nil(undo)
+        assert.is_not_nil(err)
+    end)
+    it("sets and undos the key", function()
+        -- DANGEROUS TEST!!! --
+        local path, key, value = get_test_path_key_value()
+
+        local kv = registry.key_value(path, key, value)
+        local undo, err = kv:run()
+
+        assert.is_not_nil(undo)
+        assert.is_nil(err)
+
+        _, err = undo:run()
+        assert.is_nil(err)
     end)
 end)
 
@@ -82,12 +126,9 @@ describe("value_bin", function()
 
         local reg_value = registry.value_bin(hex)
 
-        assert.equal(0x00000008, reg_value.type)
+        assert.equal(adv32.REG_BINARY, reg_value.type)
         for i = 1, #expected_value do
-            assert.equal(
-                ffi.cast("uint8_t", reg_value.value[i - 1]),
-                expected_value[i]
-            )
+            assert.equal(expected_value[i], reg_value.data[i - 1])
         end
     end)
     it("throws error if hex not a string", function()
