@@ -88,7 +88,7 @@ local function get_key_value(path, key)
     if err ~= lk32.ERROR_SUCCESS then
         return nil, winerror_tostring(err)
     end
-    return { type = value_type[1], data = value_data, size = value_size[0] }
+    return { type = value_type[0], data = value_data, size = value_size[0] }
 end
 
 ---Sets registry `subkey` to the specified `value`, returning undo command.
