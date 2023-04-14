@@ -1,107 +1,104 @@
-local defense = require("defense_windows")
-local exploit_mitigation = require("exploit_mitigation")
+local script = require("script")
+local process = require("process")
+local registry = require("registry")
+local path = require("path")
 
-local HARDENED_PROFILE = {
-    exploit_mitigation = {
-        process = {
-            data_execution_prevention = {
-                Enable = true,
-                Permanent = true,
-                DisableAtlThunkEmulation = true,
-            },
-            address_space_layout_randomization = {
-                EnableBottomUpRandomization = true,
-                EnableForceRelocateImages = true,
-                EnableHighEntropy = true,
-                DisallowStrippedImages = true,
-            },
-            dynamic_code = {
-                ProhibitDynamicCode = false, -- causes the lua to crash
-                AllowThreadOptOut = false,
-                AllowRemoteDowngrade = false,
-                AuditProhibitDynamicCode = true,
-            },
-            strict_handle_check = {
-                RaiseExceptionOnInvalidHandleReference = true,
-                HandleExceptionsPermanentlyEnabled = true,
-            },
-            system_call_disable = {
-                DisallowWin32kSystemCalls = false,
-                AuditDisallowWin32kSystemCalls = false,
-            },
-            extension_point_disable = {
-                DisableExtensionPoints = true,
-            },
-            control_flow_guard = {
-                EnableControlFlowGuard = false,
-                EnableExportSuppression = false,
-                StrictMode = false,
-                EnableXfg = false,
-                EnableXfgAuditMode = false,
-            },
-            binary_signature = {
-                MicrosoftSignedOnly = false,
-                StoreSignedOnly = false,
-                MitigationOptIn = false,
-                AuditMicrosoftSignedOnly = false,
-                AuditStoreSignedOnly = false,
-            },
-            font_disable = {
-                DisableNonSystemFonts = true,
-                AuditNonSystemFontLoading = true,
-            },
-            image_load = {
-                NoRemoteImages = true,
-                NoLowMandatoryLabelImages = true,
-                PreferSystem32Images = true,
-                AuditNoRemoteImages = true,
-                AuditNoLowMandatoryLabelImages = true,
-            },
-            redirection_trust = {
-                EnforceRedirectionTrust = true,
-                AuditRedirectionTrust = true,
-            },
-            side_channel_isolation = {
-                SmtBranchTargetIsolation = true,
-                IsolateSecurityDomain = true,
-                DisablePageCombine = true,
-                SpeculativeStoreBypassDisable = true,
-                RestrictCoreSharing = true,
-            },
-            user_shadow_stack = {
-                EnableUserShadowStack = true,
-                AuditUserShadowStack = true,
-                SetContextIpValidation = true,
-                AuditSetContextIpValidation = true,
-                EnableUserShadowStackStrictMode = true,
-                BlockNonCetBinaries = true,
-                BlockNonCetBinariesNonEhcont = true,
-                CetDynamicApisOutOfProcOnly = true,
-                SetContextIpValidationRelaxedMode = false,
-            },
-        },
-        executables = {
-            {
-                name = __api.get_exec_path(),
-                -- stylua: ignore
-                mitigation_options = {
-                    0x00, 0x11, 0x11, 0x00, 0x01, 0x00, 0x11, 0x01,
-                    0x10, 0x00, 0x11, 0x01, 0x00, 0x11, 0x00, 0x00,
-                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                },
-            },
-        },
-    },
-}
+local function execution_options(filepath)
+    return string.format(
+        "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\%s",
+        path.file(filepath)
+    )
+end
+
+local HARDENED = script.command(
+    process.mitigation_policy("data_execution_prevention", {
+        Enable = true,
+        Permanent = true,
+        DisableAtlThunkEmulation = true,
+    }),
+    process.mitigation_policy("address_space_layout_randomization", {
+        EnableBottomUpRandomization = true,
+        EnableForceRelocateImages = true,
+        EnableHighEntropy = true,
+        DisallowStrippedImages = true,
+    }),
+    process.mitigation_policy("dynamic_code", {
+        ProhibitDynamicCode = false, -- causes the lua to crash
+        AllowThreadOptOut = false,
+        AllowRemoteDowngrade = false,
+        AuditProhibitDynamicCode = true,
+    }),
+    process.mitigation_policy("strict_handle_check", {
+        RaiseExceptionOnInvalidHandleReference = true,
+        HandleExceptionsPermanentlyEnabled = true,
+    }),
+    process.mitigation_policy("system_call_disable", {
+        DisallowWin32kSystemCalls = false,
+        AuditDisallowWin32kSystemCalls = false,
+    }),
+    process.mitigation_policy("extension_point_disable", {
+        DisableExtensionPoints = true,
+    }),
+    process.mitigation_policy("control_flow_guard", {
+        EnableControlFlowGuard = false,
+        EnableExportSuppression = false,
+        StrictMode = false,
+        EnableXfg = false,
+        EnableXfgAuditMode = false,
+    }),
+    process.mitigation_policy("binary_signature", {
+        MicrosoftSignedOnly = false,
+        StoreSignedOnly = false,
+        MitigationOptIn = false,
+        AuditMicrosoftSignedOnly = false,
+        AuditStoreSignedOnly = false,
+    }),
+    process.mitigation_policy("font_disable", {
+        DisableNonSystemFonts = true,
+        AuditNonSystemFontLoading = true,
+    }),
+    process.mitigation_policy("image_load", {
+        NoRemoteImages = true,
+        NoLowMandatoryLabelImages = true,
+        PreferSystem32Images = true,
+        AuditNoRemoteImages = true,
+        AuditNoLowMandatoryLabelImages = true,
+    }),
+    process.mitigation_policy("redirection_trust", {
+        EnforceRedirectionTrust = true,
+        AuditRedirectionTrust = true,
+    }),
+    process.mitigation_policy("side_channel_isolation", {
+        SmtBranchTargetIsolation = true,
+        IsolateSecurityDomain = true,
+        DisablePageCombine = true,
+        SpeculativeStoreBypassDisable = true,
+        RestrictCoreSharing = true,
+    }),
+    process.mitigation_policy("user_shadow_stack", {
+        EnableUserShadowStack = true,
+        AuditUserShadowStack = true,
+        SetContextIpValidation = true,
+        AuditSetContextIpValidation = true,
+        EnableUserShadowStackStrictMode = true,
+        BlockNonCetBinaries = true,
+        BlockNonCetBinariesNonEhcont = true,
+        CetDynamicApisOutOfProcOnly = true,
+        SetContextIpValidationRelaxedMode = false,
+    }),
+    registry.key_value(
+        registry.hkey_local_machine(execution_options(__api.get_exec_path)),
+        "MitigationOptions",
+        registry.value_bin("001111000100110110001101001100000000000000000000")
+    )
+)
 
 ---Activates the self-defense of the current process.
 ---@return boolean|nil ok whether the self-defense was successfully activated
 ---@return string|nil error string explaining the problem, if any
 local function activate()
-    local old_profile, err = defense.apply(HARDENED_PROFILE, {
-        exploit_mitigation,
-    })
-    if not old_profile then
+    local undo, err = HARDENED:run()
+    if not undo then
         __log.errorf("failed to activate self-defense: %s", err)
         return nil, err
     end
