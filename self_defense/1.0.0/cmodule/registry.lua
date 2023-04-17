@@ -67,15 +67,7 @@ local function get_key_value(path, key)
     local value_type = ffi.new("DWORD[1]")
     local value_size = ffi.new("DWORD[1]")
     local reg_get_val = function(value_data)
-        return adv32.RegGetValueW(
-            path.tree,
-            path.path,
-            key,
-            RRF_RT_ANY,
-            value_type,
-            value_data,
-            value_size
-        )
+        return adv32.RegGetValueW(path.tree, path.path, key, RRF_RT_ANY, value_type, value_data, value_size)
     end
     local err = reg_get_val()
     if err == lk32.ERROR_FILE_NOT_FOUND then
