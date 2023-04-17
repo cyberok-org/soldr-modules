@@ -37,6 +37,7 @@ local SDDL_REVISION_1 = 1
 local OWNER_SECURITY_INFORMATION = 0x00000001
 local GROUP_SECURITY_INFORMATION = 0x00000002
 local DACL_SECURITY_INFORMATION = 0x00000004
+local PROTECTED_DACL_SECURITY_INFORMATION = 0x80000000
 local COMMON_SECURITY_INFO = OWNER_SECURITY_INFORMATION
     + GROUP_SECURITY_INFORMATION
     + DACL_SECURITY_INFORMATION
@@ -96,6 +97,48 @@ function security.get_object_sddl(object_name, object_type)
     return sddl_string, conversion_err
 end
 
+---Sets the privilege for the current process.
+---@param privilege_name string
+---@param enable boolean
+---@return boolean|nil # true if succeeded, nil if failed
+---@return string|nil # error string or nil if succeeded
+function security.set_process_privilege(privilege_name, enable)
+    local TOKEN_ADJUST_PRIVILEGES = 0x00000020
+    local TOKEN_QUERY = 0x00000008
+    local SE_PRIVILEGE_ENABLED = 0x00000002
+
+    local wprivilege_name, _ = windows.utf8_to_wide_char(privilege_name)
+    local luid = ffi.new("LUID[1]")
+    local ok = advapi32.LookupPrivilegeValueW(nil, wprivilege_name, luid)
+    if ok == 0 then
+        return nil, windows.get_last_error()
+    end
+
+    local tp = ffi.new("TOKEN_PRIVILEGES[1]")
+    tp[0].PrivilegeCount = 1
+    tp[0].Privileges[0].Luid = luid[0]
+    tp[0].Privileges[0].Attributes = enable and SE_PRIVILEGE_ENABLED or 0
+
+    local token = ffi.new("HANDLE[1]")
+    ok = advapi32.OpenProcessToken(
+        kernel32.GetCurrentProcess(),
+        TOKEN_ADJUST_PRIVILEGES + TOKEN_QUERY,
+        token
+    )
+    if ok == 0 then
+        return nil, windows.get_last_error()
+    end
+
+    ok = advapi32.AdjustTokenPrivileges(token[0], false, tp, 0, nil, nil)
+    if ok == 0 then
+        local err_code = kernel32.GetLastError()
+        kernel32.CloseHandle(token[0])
+        return nil, windows.error_to_string(err_code)
+    end
+    kernel32.CloseHandle(token[0])
+    return true
+end
+
 ---Sets the security descriptor from SDDL string for the specified object.
 ---@param object_name string
 ---@param object_type integer
@@ -116,20 +159,27 @@ function security.set_object_sddl(object_name, object_type, sddl)
         return nil, windows.get_last_error()
     end
 
+    local priv_ok, priv_err = security.set_process_privilege("SeRestorePrivilege", true)
+    if not priv_ok then
+        kernel32.LocalFree(psecurity_descriptor[0])
+        return nil, priv_err
+    end
+
     local wobject_name, _ = windows.utf8_to_wide_char(object_name)
     local err = advapi32.SetNamedSecurityInfoW(
         wobject_name,
         object_type,
-        DACL_SECURITY_INFORMATION,
+        DACL_SECURITY_INFORMATION + PROTECTED_DACL_SECURITY_INFORMATION,
         nil, -- psidOwner
         nil, -- psidGroup
         ffi.cast("PACL", psecurity_descriptor[0]), -- pDacl
         nil -- pSacl
     )
+    kernel32.LocalFree(psecurity_descriptor[0])
+    security.set_process_privilege("SeRestorePrivilege", false)
     if err ~= kernel32.ERROR_SUCCESS then
         return nil, windows.error_to_string(err)
     end
-    kernel32.LocalFree(psecurity_descriptor[0])
     return true
 end
 
