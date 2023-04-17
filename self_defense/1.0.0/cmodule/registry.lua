@@ -1,27 +1,12 @@
-local lk32 = require("waffi.windows.kernel32")
-local adv32 = require("waffi.windows.advapi32")
 local ffi = require("ffi")
+
+local advapi32 = require("waffi.windows.advapi32")
+local kernel32 = require("waffi.windows.kernel32")
+
 local script = require("script")
+local windows = require("windows")
 
 local registry = {}
-
----Converts a UTF-8 encoded string to a wide character (UTF-16) string.
----@param str string input UTF-8 encoded string
----@return ffi.cdata*|nil # wide character string or nil if conversion failed
----@return number # size of the wide character string or 0 if conversion failed
-function registry.utf8_to_wide_char(str)
-    local ptr, size = ffi.cast("const char*", str), #str
-    local nsize = lk32.MultiByteToWideChar(lk32.CP_UTF8, 0, ptr, size, nil, 0)
-
-    if nsize <= 0 then
-        return nil, 0
-    end
-
-    local wstr = ffi.new("wchar_t[?]", nsize + 1)
-    lk32.MultiByteToWideChar(lk32.CP_UTF8, 0, ptr, size, wstr, nsize)
-
-    return wstr, nsize
-end
 
 ---@class RegPath
 ---@field package tree ffi.cdata*
@@ -54,20 +39,12 @@ function KeyValue:new(path, key, val)
     return cmd
 end
 
----Returns text representations of the `err` code.
----@param err integer
----@return string
-local function winerror_tostring(err)
-    -- TODO: Get error string from code
-    return tostring(err)
-end
-
 local function get_key_value(path, key)
     local RRF_RT_ANY = 0x0000ffff
     local value_type = ffi.new("DWORD[1]")
     local value_size = ffi.new("DWORD[1]")
     local reg_get_val = function(value_data)
-        return adv32.RegGetValueW(
+        return advapi32.RegGetValueW(
             path.tree,
             path.path,
             key,
@@ -78,15 +55,15 @@ local function get_key_value(path, key)
         )
     end
     local err = reg_get_val()
-    if err == lk32.ERROR_FILE_NOT_FOUND then
+    if err == kernel32.ERROR_FILE_NOT_FOUND then
         return nil
-    elseif err ~= lk32.ERROR_SUCCESS then
-        return nil, winerror_tostring(err)
+    elseif err ~= kernel32.ERROR_SUCCESS then
+        return nil, windows.error_to_string(err)
     end
     local value_data = ffi.new("uint8_t[?]", value_size[0])
     err = reg_get_val(value_data)
-    if err ~= lk32.ERROR_SUCCESS then
-        return nil, winerror_tostring(err)
+    if err ~= kernel32.ERROR_SUCCESS then
+        return nil, windows.error_to_string(err)
     end
     return { type = value_type[0], data = value_data, size = value_size[0] }
 end
@@ -95,13 +72,13 @@ end
 ---@return Command|nil # Undo command
 ---@return error|nil   # Error string, if any
 function KeyValue:run()
-    local wkey = registry.utf8_to_wide_char(self.key)
+    local wkey = windows.utf8_to_wide_char(self.key)
     local undo_value, err = get_key_value(self.path, wkey)
     if err and not undo_value then
         return nil, err
     end
     if self.value then
-        err = adv32.RegSetKeyValueW(
+        err = advapi32.RegSetKeyValueW(
             self.path.tree,
             self.path.path,
             wkey,
@@ -109,13 +86,13 @@ function KeyValue:run()
             self.value.data,
             self.value.size
         )
-        if err ~= lk32.ERROR_SUCCESS then
-            return nil, winerror_tostring(err)
+        if err ~= kernel32.ERROR_SUCCESS then
+            return nil, windows.error_to_string(err)
         end
     else
-        err = adv32.RegDeleteKeyValueW(self.path.tree, self.path.path, wkey)
-        if err ~= lk32.ERROR_SUCCESS and err ~= lk32.ERROR_FILE_NOT_FOUND then
-            return nil, winerror_tostring(err)
+        err = advapi32.RegDeleteKeyValueW(self.path.tree, self.path.path, wkey)
+        if err ~= kernel32.ERROR_SUCCESS and err ~= kernel32.ERROR_FILE_NOT_FOUND then
+            return nil, windows.error_to_string(err)
         end
     end
     return KeyValue:new(self.path, self.key, undo_value)
@@ -142,8 +119,8 @@ end
 ---@return RegPath # Full path to the key
 function registry.hkey_local_machine(subkey)
     assert(type(subkey) == "string", "subkey must be string")
-    local wsubkey = registry.utf8_to_wide_char(subkey)
-    return { tree = ffi.cast("HKEY", adv32.HKEY_LOCAL_MACHINE), path = wsubkey }
+    local wsubkey = windows.utf8_to_wide_char(subkey)
+    return { tree = ffi.cast("HKEY", advapi32.HKEY_LOCAL_MACHINE), path = wsubkey }
 end
 
 ---Builds and returns binary registry value with specified `hex` as content.
@@ -161,7 +138,7 @@ function registry.value_bin(hex)
         table.insert(bytes, byte)
     end
     local bin = ffi.new("uint8_t[?]", #bytes, bytes)
-    return { type = adv32.REG_BINARY, data = bin, size = #bytes }
+    return { type = advapi32.REG_BINARY, data = bin, size = #bytes }
 end
 
 return registry

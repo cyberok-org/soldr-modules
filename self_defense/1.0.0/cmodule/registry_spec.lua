@@ -1,7 +1,10 @@
 ---@diagnostic disable: invisible, need-check-nil, param-type-mismatch
-local registry = require("registry")
 local ffi = require("ffi")
-local adv32 = require("waffi.windows.advapi32")
+
+local advapi32 = require("waffi.windows.advapi32")
+
+local registry = require("registry")
+local windows = require("windows")
 
 ffi.cdef([[
     int lstrcmpW(const wchar_t* lpString1, const wchar_t* lpString2);
@@ -9,12 +12,12 @@ ffi.cdef([[
 
 local function get_test_path_key_value()
     local path = {
-        tree = ffi.cast("HKEY", adv32.HKEY_CURRENT_USER),
-        path = registry.utf8_to_wide_char("SOFTWARE\\Test"),
+        tree = ffi.cast("HKEY", advapi32.HKEY_CURRENT_USER),
+        path = windows.utf8_to_wide_char("SOFTWARE\\Test"),
     }
     local key = "TestKey"
     local value = {
-        type = adv32.REG_BINARY,
+        type = advapi32.REG_BINARY,
         data = ffi.new("uint8_t[1]"),
         size = 1,
     }
@@ -103,11 +106,11 @@ end)
 describe("hkey_local_machine", function()
     it("creates registry path with given subkey", function()
         local subkey = "SOFTWARE\\Test"
-        local expected_value = registry.utf8_to_wide_char(subkey)
+        local expected_value = windows.utf8_to_wide_char(subkey)
 
         local reg_path = registry.hkey_local_machine(subkey)
 
-        assert.equal(ffi.cast("HKEY", adv32.HKEY_LOCAL_MACHINE), reg_path.tree)
+        assert.equal(ffi.cast("HKEY", advapi32.HKEY_LOCAL_MACHINE), reg_path.tree)
         assert.equal(0, ffi.C.lstrcmpW(reg_path.path, expected_value))
     end)
 
@@ -126,7 +129,7 @@ describe("value_bin", function()
 
         local reg_value = registry.value_bin(hex)
 
-        assert.equal(adv32.REG_BINARY, reg_value.type)
+        assert.equal(advapi32.REG_BINARY, reg_value.type)
         for i = 1, #expected_value do
             assert.equal(expected_value[i], reg_value.data[i - 1])
         end

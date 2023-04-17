@@ -1,7 +1,8 @@
-local script = require("script")
+local path = require("path")
+
 local process = require("process")
 local registry = require("registry")
-local path = require("path")
+local script = require("script")
 
 local function execution_options(filepath)
     return string.format(

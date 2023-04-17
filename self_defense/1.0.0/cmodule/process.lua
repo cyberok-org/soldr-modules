@@ -1,7 +1,9 @@
-require("waffi.headers.windows")
-local lk32 = require("waffi.windows.kernel32")
 local ffi = require("ffi")
+
+local kernel32 = require("waffi.windows.kernel32")
+
 local script = require("script")
+local windows = require("windows")
 
 local process = {}
 
@@ -280,20 +282,6 @@ function MitigationPolicy:new(name, params)
     return cmd
 end
 
----Returns text representations of the `err` code.
----@param err integer
----@return string
-local function winerror_tostring(err)
-    -- TODO: Get error string from code
-    return tostring(err)
-end
-
----Gets the last error as a string.
----@return string error
-local function get_last_error()
-    return winerror_tostring(lk32.GetLastError())
-end
-
 ---Sets exploit mitigation policy for the current process, returning undo command.
 ---@return Command|nil # Undo command
 ---@return error|nil   # Error string, if any
@@ -301,10 +289,10 @@ function MitigationPolicy:run()
     local policy = POLICIES[self.name]
     local buf = ffi.new(policy.schema)
     local buf_len = ffi.sizeof(policy.schema)
-    local pid = lk32.GetCurrentProcess()
+    local pid = kernel32.GetCurrentProcess()
     local ret = ffi.C.GetProcessMitigationPolicy(pid, policy.id, buf, buf_len)
     if not ret then
-        return nil, get_last_error()
+        return nil, windows.get_last_error()
     end
     local undo_params = {}
     for key, value in pairs(self.params) do
@@ -313,7 +301,7 @@ function MitigationPolicy:run()
     end
     ret = ffi.C.SetProcessMitigationPolicy(policy.id, buf, buf_len)
     if not ret then
-        return nil, get_last_error()
+        return nil, windows.get_last_error()
     end
     return MitigationPolicy:new(self.name, undo_params)
 end

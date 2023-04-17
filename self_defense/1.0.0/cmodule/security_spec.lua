@@ -1,5 +1,5 @@
-local ffi = require("ffi")
 local path = require("pl.path")
+
 local advapi32 = require("waffi.windows.advapi32")
 local security = require("security")
 
