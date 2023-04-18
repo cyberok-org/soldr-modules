@@ -139,6 +139,52 @@ function security.set_process_privilege(privilege_name, enable)
     return true
 end
 
+---Sets the security descriptor for the object with the specified `object_name` and `object_type`.
+---@param object_name string
+---@param object_type integer
+---@param descriptor ffi.cdata*
+---@return boolean|nil # true if succeeded, nil if failed
+---@return string|nil # error string or nil if succeeded
+function security.set_object_descriptor(object_name, object_type, descriptor)
+    local owner = ffi.new("PSID[1]")
+    local owner_defaulted = ffi.new("BOOL[1]")
+    local group = ffi.new("PSID[1]")
+    local group_defaulted = ffi.new("BOOL[1]")
+    local dacl_present = ffi.new("BOOL[1]")
+    local dacl = ffi.new("PACL[1]")
+    local dacl_defaulted = ffi.new("BOOL[1]")
+    if advapi32.GetSecurityDescriptorOwner(descriptor, owner, owner_defaulted) == 0 then
+        return nil, "GetSecurityDescriptorOwner: " .. windows.get_last_error()
+    end
+    if advapi32.GetSecurityDescriptorGroup(descriptor, group, group_defaulted) == 0 then
+        return nil, "GetSecurityDescriptorGroup: " .. windows.get_last_error()
+    end
+    if advapi32.GetSecurityDescriptorDacl(descriptor, dacl_present, dacl, dacl_defaulted) == 0 then
+        return nil, "GetSecurityDescriptorDacl " .. windows.get_last_error()
+    end
+
+    local priv_ok, priv_err = security.set_process_privilege("SeRestorePrivilege", true)
+    if not priv_ok then
+        return nil, priv_err
+    end
+
+    local wobject_name, _ = windows.utf8_to_wide_char(object_name)
+    local err = advapi32.SetNamedSecurityInfoW(
+        wobject_name,
+        object_type,
+        COMMON_SECURITY_INFO + PROTECTED_DACL_SECURITY_INFORMATION,
+        owner[0],
+        group[0],
+        dacl_present[0] == 1 and dacl[0] or nil,
+        nil -- pSacl
+    )
+    security.set_process_privilege("SeRestorePrivilege", false)
+    if err ~= kernel32.ERROR_SUCCESS then
+        return nil, windows.error_to_string(err)
+    end
+    return true
+end
+
 ---Sets the security descriptor from SDDL string for the specified object.
 ---@param object_name string
 ---@param object_type integer
@@ -159,28 +205,10 @@ function security.set_object_sddl(object_name, object_type, sddl)
         return nil, windows.get_last_error()
     end
 
-    local priv_ok, priv_err = security.set_process_privilege("SeRestorePrivilege", true)
-    if not priv_ok then
-        kernel32.LocalFree(psecurity_descriptor[0])
-        return nil, priv_err
-    end
-
-    local wobject_name, _ = windows.utf8_to_wide_char(object_name)
-    local err = advapi32.SetNamedSecurityInfoW(
-        wobject_name,
-        object_type,
-        DACL_SECURITY_INFORMATION + PROTECTED_DACL_SECURITY_INFORMATION,
-        nil, -- psidOwner
-        nil, -- psidGroup
-        ffi.cast("PACL", psecurity_descriptor[0]), -- pDacl
-        nil -- pSacl
-    )
+    local set_ok, set_err =
+        security.set_object_descriptor(object_name, object_type, psecurity_descriptor[0])
     kernel32.LocalFree(psecurity_descriptor[0])
-    security.set_process_privilege("SeRestorePrivilege", false)
-    if err ~= kernel32.ERROR_SUCCESS then
-        return nil, windows.error_to_string(err)
-    end
-    return true
+    return set_ok, set_err
 end
 
 ---Sets the security descriptor for the specified object, returning undo command.

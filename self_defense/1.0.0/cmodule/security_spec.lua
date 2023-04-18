@@ -52,6 +52,5 @@ describe("Descriptor:run", function()
 
         assert.is_nil(err)
         assert.is_not_nil(undo)
-        print(file_name)
     end)
 end)
