@@ -97,6 +97,11 @@ local HARDENED = script.command(
     security.service_descriptor(
         "vxagent",
         "D:(A;;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;SY)(A;;CCLCSWLOCRRC;;;SU)S:(AU;FA;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;WD)"
+    ),
+    -- Set Full Access for SYSTEM exclusively, and audit access for Everyone
+    security.file_descriptor(
+        path.dir((__api.get_exec_path())),
+        "O:SYG:S-1-5-21-815770899-3706867064-1381326651-513D:PAI(A;OICI;FA;;;SY)S:PAI(AU;OICISAFA;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;WD)"
     )
 )
 

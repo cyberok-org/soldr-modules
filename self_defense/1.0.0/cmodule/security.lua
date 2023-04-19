@@ -41,7 +41,9 @@ local SDDL_REVISION_1 = 1
 security.OWNER_SECURITY_INFORMATION = 0x00000001
 security.GROUP_SECURITY_INFORMATION = 0x00000002
 security.DACL_SECURITY_INFORMATION = 0x00000004
+security.SACL_SECURITY_INFORMATION = 0x00000008
 security.PROTECTED_DACL_SECURITY_INFORMATION = 0x80000000
+security.PROTECTED_SACL_SECURITY_INFORMATION = 0x40000000
 
 ---Converts a security descriptor to a SDDL string.
 ---@param descriptor ffi.cdata*
@@ -75,9 +77,13 @@ end
 ---@return string|nil # SDDL string or nil if failed
 ---@return string|nil # error string or nil if succeeded
 function security.get_object_sddl(object_name, object_type, info)
+    local priv_ok, priv_err = security.set_process_privilege("SeBackupPrivilege", true)
+    if not priv_ok then
+        return nil, "set_process_privilege():" .. priv_err
+    end
+
     local wobject_name, _ = windows.utf8_to_wide_char(object_name)
     local pdescriptor = ffi.new("PSECURITY_DESCRIPTOR_RELATIVE[1]")
-
     local err = advapi32.GetNamedSecurityInfoW(
         wobject_name,
         object_type,
@@ -88,6 +94,7 @@ function security.get_object_sddl(object_name, object_type, info)
         nil, -- ppSacl,
         pdescriptor
     )
+    security.set_process_privilege("SeBackupPrivilege", false)
 
     if err ~= kernel32.ERROR_SUCCESS then
         return nil, "GetNamedSecurityInfoW():" .. windows.error_to_string(err)
@@ -155,6 +162,9 @@ function security.set_object_descriptor(object_name, object_type, info, descript
     local dacl_present = ffi.new("BOOL[1]")
     local dacl = ffi.new("PACL[1]")
     local dacl_defaulted = ffi.new("BOOL[1]")
+    local sasl_present = ffi.new("BOOL[1]")
+    local sasl = ffi.new("PACL[1]")
+    local sasl_defaulted = ffi.new("BOOL[1]")
     if advapi32.GetSecurityDescriptorOwner(descriptor, owner, owner_defaulted) == 0 then
         return nil, "GetSecurityDescriptorOwner: " .. windows.get_last_error()
     end
@@ -163,6 +173,9 @@ function security.set_object_descriptor(object_name, object_type, info, descript
     end
     if advapi32.GetSecurityDescriptorDacl(descriptor, dacl_present, dacl, dacl_defaulted) == 0 then
         return nil, "GetSecurityDescriptorDacl " .. windows.get_last_error()
+    end
+    if advapi32.GetSecurityDescriptorSacl(descriptor, sasl_present, sasl, sasl_defaulted) == 0 then
+        return nil, "GetSecurityDescriptorSacl " .. windows.get_last_error()
     end
 
     local priv_ok, priv_err = security.set_process_privilege("SeRestorePrivilege", true)
@@ -178,7 +191,7 @@ function security.set_object_descriptor(object_name, object_type, info, descript
         owner[0],
         group[0],
         dacl_present[0] == 1 and dacl[0] or nil,
-        nil -- pSacl
+        sasl_present[0] == 1 and sasl[0] or nil
     )
     security.set_process_privilege("SeRestorePrivilege", false)
     if err ~= kernel32.ERROR_SUCCESS then
@@ -243,6 +256,8 @@ function security.file_descriptor(object_name, sddl)
         + security.GROUP_SECURITY_INFORMATION
         + security.DACL_SECURITY_INFORMATION
         + security.PROTECTED_DACL_SECURITY_INFORMATION
+        + security.SACL_SECURITY_INFORMATION
+        + security.PROTECTED_SACL_SECURITY_INFORMATION
     return Descriptor:new(object_name, advapi32.SE_FILE_OBJECT, FILE_SECURITY_INFO, sddl)
 end
 
