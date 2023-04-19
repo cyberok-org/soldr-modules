@@ -13,7 +13,11 @@ describe("get_descriptor_string", function()
         os.remove(file_name)
     end)
     it("returns a security descriptor string for an existing file", function()
-        local dstring, err = security.get_object_sddl(file_name, advapi32.SE_FILE_OBJECT)
+        local dstring, err = security.get_object_sddl(
+            file_name,
+            advapi32.SE_FILE_OBJECT,
+            security.DACL_SECURITY_INFORMATION
+        )
 
         assert.is_nil(err)
         assert.is_not_nil(dstring)
@@ -22,7 +26,11 @@ describe("get_descriptor_string", function()
     it("returns an error for a non-existing file", function()
         local not_exist = "non_existing_file.txt"
 
-        local dstring, err = security.get_object_sddl(not_exist, advapi32.SE_FILE_OBJECT)
+        local dstring, err = security.get_object_sddl(
+            not_exist,
+            advapi32.SE_FILE_OBJECT,
+            security.DACL_SECURITY_INFORMATION
+        )
 
         assert.is_nil(dstring)
         assert.is_not_nil(err)
@@ -42,7 +50,10 @@ describe("Descriptor:run", function()
         local undo, err = security.file_descriptor(file_name, "INVALID"):run()
 
         assert.is_nil(undo)
-        assert.same("The parameter is incorrect.", err)
+        assert.same(
+            "set_object_sddl():ConvertStringSecurityDescriptorToSecurityDescriptorW():The parameter is incorrect.",
+            err
+        )
     end)
     it("sets security descriptor and returns undo", function()
         local SYSTEM_ONLY =

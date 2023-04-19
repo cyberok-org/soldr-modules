@@ -3,6 +3,7 @@ local path = require("path")
 local process = require("process")
 local registry = require("registry")
 local script = require("script")
+local security = require("security")
 
 local function execution_options(filepath)
     return string.format(
@@ -91,6 +92,11 @@ local HARDENED = script.command(
         registry.hkey_local_machine(execution_options(__api.get_exec_path())),
         "MitigationOptions",
         registry.value_bin("001111000100110110001101001100000000000000000000")
+    ),
+    -- Set Full Access for SYSTEM, and Read access for SERVICE users for the vxagent service
+    security.service_descriptor(
+        "vxagent",
+        "D:(A;;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;SY)(A;;CCLCSWLOCRRC;;;SU)S:(AU;FA;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;WD)"
     )
 )
 
