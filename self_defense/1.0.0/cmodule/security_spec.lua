@@ -59,8 +59,7 @@ describe("file_descriptor", function()
 end)
 
 describe("process_descriptor", function()
-    local EVERYONE =
-        "O:SYG:S-1-5-21-815770899-3706867064-1381326651-513D:PAI(A;;FA;;;SY)S:PAI(AU;SAFA;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;WD)"
+    local SYSTEM_ONLY = "D:(A;;0x1fffff;;;SY)"
     it("throws error if sddl is not a string", function()
         assert.has_error(function()
             security.process_descriptor({ "not a string" })
@@ -75,29 +74,41 @@ describe("process_descriptor", function()
         assert.is_not_nil(err)
     end)
     it("sets process SDDL and returns undo command", function()
-        local inital_sddl = util.process_sddl()
-        local proc = security.process_descriptor(EVERYONE)
+        local initial_sddl = util.process_sddl()
+        local proc = security.process_descriptor(SYSTEM_ONLY)
 
-        assert.are_not_same(EVERYONE, inital_sddl)
+        assert.are_not_same(SYSTEM_ONLY, initial_sddl)
         local undo, err = proc:run()
 
         assert.is_nil(err)
         assert.is_not_nil(undo)
-        assert.are_same(EVERYONE, util.process_sddl())
+        assert.are_same(SYSTEM_ONLY, util.process_sddl())
+
+        local _, undo_err = undo:run()
+        assert.is_nil(undo_err)
+        assert.are_same(initial_sddl, util.process_sddl())
     end)
 end)
 
+local SDDL_REVISION_1 = 1
+local OWNER_SECURITY_INFORMATION = 0x00000001
+local GROUP_SECURITY_INFORMATION = 0x00000002
+local DACL_SECURITY_INFORMATION = 0x00000004
+local SACL_SECURITY_INFORMATION = 0x00000008
+local PROTECTED_DACL_SECURITY_INFORMATION = 0x80000000
+local PROTECTED_SACL_SECURITY_INFORMATION = 0x40000000
+
 function util.file_sddl(file_name)
-    local DESCRIPTOR_INFO = security.OWNER_SECURITY_INFORMATION
-        + security.GROUP_SECURITY_INFORMATION
-        + security.DACL_SECURITY_INFORMATION
-        + security.PROTECTED_DACL_SECURITY_INFORMATION
-        + security.SACL_SECURITY_INFORMATION
-        + security.PROTECTED_SACL_SECURITY_INFORMATION
+    local DESCRIPTOR_INFO = OWNER_SECURITY_INFORMATION
+        + GROUP_SECURITY_INFORMATION
+        + DACL_SECURITY_INFORMATION
+        + PROTECTED_DACL_SECURITY_INFORMATION
+        + SACL_SECURITY_INFORMATION
+        + PROTECTED_SACL_SECURITY_INFORMATION
     local descriptor = ffi.new("PSECURITY_DESCRIPTOR_RELATIVE[1]")
     local wsddl = ffi.new("wchar_t*[1]")
     local wsddl_len = ffi.new("ULONG[1]")
-    assert(security.set_process_privilege("SeBackupPrivilege", true))
+    assert(windows.set_process_privilege("SeBackupPrivilege", true))
     assert(
         advapi32.GetNamedSecurityInfoW(
             windows.utf8_to_wide_char(file_name),
@@ -110,11 +121,11 @@ function util.file_sddl(file_name)
             descriptor
         ) == kernel32.ERROR_SUCCESS
     )
-    assert(security.set_process_privilege("SeBackupPrivilege", false))
+    assert(windows.set_process_privilege("SeBackupPrivilege", false))
     assert(
         advapi32.ConvertSecurityDescriptorToStringSecurityDescriptorW(
             ffi.cast("PSECURITY_DESCRIPTOR", descriptor[0]),
-            security.SDDL_REVISION_1,
+            SDDL_REVISION_1,
             DESCRIPTOR_INFO,
             wsddl,
             wsddl_len
@@ -127,7 +138,7 @@ function util.file_sddl(file_name)
 end
 
 function util.process_sddl()
-    local DESCRIPTOR_INFO = security.DACL_SECURITY_INFORMATION
+    local DESCRIPTOR_INFO = DACL_SECURITY_INFORMATION
     local descriptor = ffi.new("PSECURITY_DESCRIPTOR[1]")
     local wsddl = ffi.new("wchar_t*[1]")
     local wsddl_len = ffi.new("ULONG[1]")
@@ -146,7 +157,7 @@ function util.process_sddl()
     assert(
         advapi32.ConvertSecurityDescriptorToStringSecurityDescriptorW(
             ffi.cast("PSECURITY_DESCRIPTOR", descriptor[0]),
-            security.SDDL_REVISION_1,
+            SDDL_REVISION_1,
             DESCRIPTOR_INFO,
             wsddl,
             wsddl_len
