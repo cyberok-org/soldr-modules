@@ -58,6 +58,35 @@ describe("file_descriptor", function()
     end)
 end)
 
+describe("process_descriptor", function()
+    local EVERYONE =
+        "O:SYG:S-1-5-21-815770899-3706867064-1381326651-513D:PAI(A;;FA;;;SY)S:PAI(AU;SAFA;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;WD)"
+    it("throws error if sddl is not a string", function()
+        assert.has_error(function()
+            security.process_descriptor({ "not a string" })
+        end, "sddl must be a string")
+    end)
+    it("returns error if SDDL string is invalid", function()
+        local proc = security.process_descriptor("INVALID")
+
+        local undo, err = proc:run()
+
+        assert.is_nil(undo)
+        assert.is_not_nil(err)
+    end)
+    it("sets process SDDL and returns undo command", function()
+        local inital_sddl = util.process_sddl()
+        local proc = security.process_descriptor(EVERYONE)
+
+        assert.are_not_same(EVERYONE, inital_sddl)
+        local undo, err = proc:run()
+
+        assert.is_nil(err)
+        assert.is_not_nil(undo)
+        assert.are_same(EVERYONE, util.process_sddl())
+    end)
+end)
+
 function util.file_sddl(file_name)
     local DESCRIPTOR_INFO = security.OWNER_SECURITY_INFORMATION
         + security.GROUP_SECURITY_INFORMATION
@@ -82,6 +111,38 @@ function util.file_sddl(file_name)
         ) == kernel32.ERROR_SUCCESS
     )
     assert(security.set_process_privilege("SeBackupPrivilege", false))
+    assert(
+        advapi32.ConvertSecurityDescriptorToStringSecurityDescriptorW(
+            ffi.cast("PSECURITY_DESCRIPTOR", descriptor[0]),
+            security.SDDL_REVISION_1,
+            DESCRIPTOR_INFO,
+            wsddl,
+            wsddl_len
+        ) ~= 0
+    )
+    local sddl = windows.wide_char_to_utf8(wsddl[0], wsddl_len[0])
+    kernel32.LocalFree(wsddl[0])
+    kernel32.LocalFree(descriptor[0])
+    return sddl
+end
+
+function util.process_sddl()
+    local DESCRIPTOR_INFO = security.DACL_SECURITY_INFORMATION
+    local descriptor = ffi.new("PSECURITY_DESCRIPTOR[1]")
+    local wsddl = ffi.new("wchar_t*[1]")
+    local wsddl_len = ffi.new("ULONG[1]")
+    assert(
+        advapi32.GetSecurityInfo(
+            kernel32.GetCurrentProcess(),
+            advapi32.SE_KERNEL_OBJECT,
+            DESCRIPTOR_INFO,
+            nil,
+            nil,
+            nil,
+            nil,
+            descriptor
+        ) == kernel32.ERROR_SUCCESS
+    )
     assert(
         advapi32.ConvertSecurityDescriptorToStringSecurityDescriptorW(
             ffi.cast("PSECURITY_DESCRIPTOR", descriptor[0]),

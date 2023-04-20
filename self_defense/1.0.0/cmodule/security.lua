@@ -198,6 +198,83 @@ function security.set_object_sddl(object_name, object_type, info, sddl)
     return set_ok, set_err
 end
 
+---@class ProcessObject
+local ProcessObject = {}
+ProcessObject.__index = ProcessObject
+
+function security.process_object()
+    return setmetatable({}, ProcessObject)
+end
+
+function ProcessObject:get_sddl(info)
+    local priv_ok, priv_err = security.set_process_privilege("SeBackupPrivilege", true)
+    if not priv_ok then
+        return nil, "set_process_privilege():" .. priv_err
+    end
+
+    local pdescriptor = ffi.new("PSECURITY_DESCRIPTOR[1]")
+    local err = advapi32.GetSecurityInfo(
+        kernel32.GetCurrentProcess(),
+        advapi32.SE_KERNEL_OBJECT,
+        info,
+        nil, -- ppSidOwner
+        nil, -- ppSidGroup
+        nil, -- ppDacl,
+        nil, -- ppSacl,
+        pdescriptor
+    )
+    security.set_process_privilege("SeBackupPrivilege", false)
+    if err ~= kernel32.ERROR_SUCCESS then
+        return nil, "GetSecurityInfo():" .. windows.error_to_string(err)
+    end
+    local sddl_string, conversion_err = get_descriptor_sddl(info, pdescriptor[0])
+    kernel32.LocalFree(pdescriptor[0])
+
+    return sddl_string, conversion_err
+end
+
+function ProcessObject:set_descriptor(info, descriptor)
+    local dacl_present = ffi.new("BOOL[1]")
+    local dacl = ffi.new("PACL[1]")
+    local dacl_defaulted = ffi.new("BOOL[1]")
+    if advapi32.GetSecurityDescriptorDacl(descriptor, dacl_present, dacl, dacl_defaulted) == 0 then
+        return nil, "GetSecurityDescriptorDacl " .. windows.get_last_error()
+    end
+    local err = advapi32.SetSecurityInfo(
+        kernel32.GetCurrentProcess(),
+        advapi32.SE_KERNEL_OBJECT,
+        info,
+        nil,
+        nil,
+        dacl_present[0] == 1 and dacl[0] or nil,
+        nil
+    )
+    if err ~= kernel32.ERROR_SUCCESS then
+        return nil, "SetSecurityInfo():" .. windows.error_to_string(err)
+    end
+    return true
+end
+
+function ProcessObject:set_sddl(info, sddl)
+    local psecurity_descriptor = ffi.new("PSECURITY_DESCRIPTOR[1]")
+    local psecurity_descriptor_len = ffi.new("ULONG[1]")
+    local wsddl, _ = windows.utf8_to_wide_char(sddl)
+    local ok = advapi32.ConvertStringSecurityDescriptorToSecurityDescriptorW(
+        wsddl,
+        security.SDDL_REVISION_1,
+        psecurity_descriptor,
+        psecurity_descriptor_len
+    )
+    if ok == 0 then
+        return nil,
+            "ConvertStringSecurityDescriptorToSecurityDescriptorW():" .. windows.get_last_error()
+    end
+
+    local set_ok, set_err = self:set_descriptor(info, psecurity_descriptor[0])
+    kernel32.LocalFree(psecurity_descriptor[0])
+    return set_ok, set_err
+end
+
 ---@class NamedObject
 ---@field private name string
 ---@field private type integer
@@ -280,6 +357,11 @@ function security.file_descriptor(file_name, sddl)
             + security.PROTECTED_SACL_SECURITY_INFORMATION,
         sddl
     )
+end
+
+function security.process_descriptor(sddl)
+    assert(type(sddl) == "string", "sddl must be a string")
+    return Descriptor:new(security.process_object(), security.DACL_SECURITY_INFORMATION, sddl)
 end
 
 return security
