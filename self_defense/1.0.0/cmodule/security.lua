@@ -8,36 +8,7 @@ local windows = require("windows")
 
 local security = {}
 
----@class Descriptor: Command
----@field private object_name string
----@field private object_type integer
----@field private info integer
----@field private sddl string
-local Descriptor = {}
-
----Creates and returns a new Descriptor object.
----@param object_name string
----@param object_type integer
----@param info integer
----@param sddl string
----@return Descriptor
-function Descriptor:new(object_name, object_type, info, sddl)
-    assert(type(object_name) == "string", "object_name must be a string")
-    assert(type(object_type) == "number", "object_type must be a number")
-    assert(type(info) == "number", "info must be a number")
-    assert(type(sddl) == "string", "sddl must be a string")
-    local cmd = script.command()
-    setmetatable(cmd, self)
-    self.__index = self
-    ---@cast cmd Descriptor
-    cmd.object_name = object_name
-    cmd.object_type = object_type
-    cmd.info = info
-    cmd.sddl = sddl
-    return cmd
-end
-
-local SDDL_REVISION_1 = 1
+security.SDDL_REVISION_1 = 1
 security.OWNER_SECURITY_INFORMATION = 0x00000001
 security.GROUP_SECURITY_INFORMATION = 0x00000002
 security.DACL_SECURITY_INFORMATION = 0x00000004
@@ -55,7 +26,7 @@ local function get_descriptor_sddl(info, descriptor)
 
     local ok = advapi32.ConvertSecurityDescriptorToStringSecurityDescriptorW(
         ffi.cast("SECURITY_DESCRIPTOR *", descriptor),
-        SDDL_REVISION_1,
+        security.SDDL_REVISION_1,
         info,
         wsddl_string,
         wsddl_string_len
@@ -212,7 +183,7 @@ function security.set_object_sddl(object_name, object_type, info, sddl)
     local wsddl, _ = windows.utf8_to_wide_char(sddl)
     local ok = advapi32.ConvertStringSecurityDescriptorToSecurityDescriptorW(
         wsddl,
-        SDDL_REVISION_1,
+        security.SDDL_REVISION_1,
         psecurity_descriptor,
         psecurity_descriptor_len
     )
@@ -227,38 +198,88 @@ function security.set_object_sddl(object_name, object_type, info, sddl)
     return set_ok, set_err
 end
 
----Sets the security descriptor for the specified object, returning undo command.
-function Descriptor:run()
-    local undo_sddl, err = security.get_object_sddl(self.object_name, self.object_type, self.info)
-    if not undo_sddl then
-        return nil, "get_object_sddl():" .. err
-    end
+---@class NamedObject
+---@field private name string
+---@field private type integer
+local NamedObject = {}
+NamedObject.__index = NamedObject
 
-    local ok, err =
-        security.set_object_sddl(self.object_name, self.object_type, self.info, self.sddl)
-    if not ok then
-        return nil, "set_object_sddl():" .. err
-    end
-    return Descriptor:new(self.object_name, self.object_type, self.info, undo_sddl)
+function security.file_object(file_name)
+    return setmetatable({
+        name = file_name,
+        type = advapi32.SE_FILE_OBJECT,
+    }, NamedObject)
 end
 
-function security.service_descriptor(object_name, sddl)
+function security.service_object(service_name)
+    return setmetatable({
+        name = service_name,
+        type = advapi32.SE_SERVICE,
+    }, NamedObject)
+end
+
+function NamedObject:get_sddl(info)
+    return security.get_object_sddl(self.name, self.type, info)
+end
+
+function NamedObject:set_sddl(info, sddl)
+    return security.set_object_sddl(self.name, self.type, info, sddl)
+end
+
+---@class Descriptor: Command
+---@field private object NamedObject
+---@field private info integer
+---@field private sddl string
+local Descriptor = {}
+Descriptor.__index = Descriptor
+setmetatable(Descriptor, script.Command)
+
+function Descriptor:new(object, info, sddl)
+    return setmetatable({
+        object = object,
+        info = info,
+        sddl = sddl,
+    }, self)
+end
+
+---Sets the security descriptor for the specified object, returning undo command.
+function Descriptor:run()
+    local undo_sddl, get_sddl_err = self.object:get_sddl(self.info)
+    if not undo_sddl then
+        return nil, "object:get_sddl():" .. get_sddl_err
+    end
+
+    local ok, set_sddl_err = self.object:set_sddl(self.info, self.sddl)
+    if not ok then
+        return nil, "object:set_sddl():" .. set_sddl_err
+    end
+
+    return Descriptor:new(self.object, self.info, undo_sddl)
+end
+
+function security.service_descriptor(service_name, sddl)
+    assert(type(service_name) == "string", "service_name must be a string")
+    assert(type(sddl) == "string", "sddl must be a string")
     return Descriptor:new(
-        object_name,
-        advapi32.SE_SERVICE,
+        security.service_object(service_name),
         security.DACL_SECURITY_INFORMATION,
         sddl
     )
 end
 
-function security.file_descriptor(object_name, sddl)
-    local FILE_SECURITY_INFO = security.OWNER_SECURITY_INFORMATION
-        + security.GROUP_SECURITY_INFORMATION
-        + security.DACL_SECURITY_INFORMATION
-        + security.PROTECTED_DACL_SECURITY_INFORMATION
-        + security.SACL_SECURITY_INFORMATION
-        + security.PROTECTED_SACL_SECURITY_INFORMATION
-    return Descriptor:new(object_name, advapi32.SE_FILE_OBJECT, FILE_SECURITY_INFO, sddl)
+function security.file_descriptor(file_name, sddl)
+    assert(type(file_name) == "string", "file_name must be a string")
+    assert(type(sddl) == "string", "sddl must be a string")
+    return Descriptor:new(
+        security.file_object(file_name),
+        security.OWNER_SECURITY_INFORMATION
+            + security.GROUP_SECURITY_INFORMATION
+            + security.DACL_SECURITY_INFORMATION
+            + security.PROTECTED_DACL_SECURITY_INFORMATION
+            + security.SACL_SECURITY_INFORMATION
+            + security.PROTECTED_SACL_SECURITY_INFORMATION,
+        sddl
+    )
 end
 
 return security

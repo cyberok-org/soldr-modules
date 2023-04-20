@@ -36,8 +36,8 @@ function windows.wide_char_to_utf8(str, size)
     end
 
     local utf8 = ffi.new("char[?]", nsize)
-    kernel32.WideCharToMultiByte(kernel32.CP_UTF8, 0, str, size, utf8, nsize, nil, nil)
-    return tostring(ffi.string(utf8, nsize)), nsize
+    nsize = kernel32.WideCharToMultiByte(kernel32.CP_UTF8, 0, str, size, utf8, nsize, nil, nil)
+    return tostring(ffi.string(utf8, nsize - 2)), nsize - 2
 end
 
 ---Returns text representations of the windows error code `err`.
