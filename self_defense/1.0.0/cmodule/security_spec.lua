@@ -58,6 +58,49 @@ describe("file_descriptor", function()
     end)
 end)
 
+describe("registry_descriptor", function()
+    local EVERYONE = "O:WDG:S-1-5-21-815770899-3706867064-1381326651-513D:PAI(A;CI;KA;;;WD)"
+    it("throws error if path is not string", function()
+        assert.has_error(function()
+            security.registry_descriptor({ "not a string" }, EVERYONE)
+        end, "path must be a string")
+    end)
+    it("throws error if sddl is not a string", function()
+        assert.has_error(function()
+            security.registry_descriptor("path", { "not a string" })
+        end, "sddl must be a string")
+    end)
+    it("returns error if registry key does not exist", function()
+        local reg = security.registry_descriptor("CURRENT_USER\\non_existing_key", EVERYONE)
+
+        local undo, err = reg:run()
+
+        assert.is_nil(undo)
+        assert.is_not_nil(err)
+    end)
+    it("returns error if SDDL string is invalid", function()
+        local reg = security.registry_descriptor("CURRENT_USER\\Network", "INVALID")
+
+        local undo, err = reg:run()
+
+        assert.is_nil(undo)
+        assert.is_not_nil(err)
+    end)
+    it("sets registry SDDL and returns undo command", function()
+        local initial_sddl = util.registry_sddl("CURRENT_USER\\Network")
+        local reg = security.registry_descriptor("CURRENT_USER\\Network", EVERYONE)
+
+        assert.are_not_same(EVERYONE, initial_sddl)
+        local undo, err = reg:run()
+
+        assert.is_nil(err)
+        assert.is_not_nil(undo)
+        assert.are_same(EVERYONE, util.registry_sddl("CURRENT_USER\\Network"))
+
+        undo:run()
+    end)
+end)
+
 describe("process_descriptor", function()
     local SYSTEM_ONLY = "D:(A;;0x1fffff;;;SY)"
     it("throws error if sddl is not a string", function()
@@ -98,6 +141,39 @@ local SACL_SECURITY_INFORMATION = 0x00000008
 local PROTECTED_DACL_SECURITY_INFORMATION = 0x80000000
 local PROTECTED_SACL_SECURITY_INFORMATION = 0x40000000
 
+local function get_sddl(object_type, object_name, security_info)
+    local descriptor = ffi.new("PSECURITY_DESCRIPTOR_RELATIVE[1]")
+    local wsddl = ffi.new("wchar_t*[1]")
+    local wsddl_len = ffi.new("ULONG[1]")
+    assert(windows.set_process_privilege("SeBackupPrivilege", true))
+    assert(
+        advapi32.GetNamedSecurityInfoW(
+            windows.utf8_to_wide_char(object_name),
+            object_type,
+            security_info,
+            nil,
+            nil,
+            nil,
+            nil,
+            descriptor
+        ) == 0
+    )
+    assert(windows.set_process_privilege("SeBackupPrivilege", false))
+    assert(
+        advapi32.ConvertSecurityDescriptorToStringSecurityDescriptorW(
+            ffi.cast("PSECURITY_DESCRIPTOR", descriptor[0]),
+            SDDL_REVISION_1,
+            security_info,
+            wsddl,
+            wsddl_len
+        ) == 1
+    )
+    local sddl = windows.wide_char_to_utf8(wsddl[0], wsddl_len[0])
+    kernel32.LocalFree(wsddl[0])
+    kernel32.LocalFree(descriptor[0])
+    return sddl
+end
+
 function util.file_sddl(file_name)
     local DESCRIPTOR_INFO = OWNER_SECURITY_INFORMATION
         + GROUP_SECURITY_INFORMATION
@@ -105,36 +181,15 @@ function util.file_sddl(file_name)
         + PROTECTED_DACL_SECURITY_INFORMATION
         + SACL_SECURITY_INFORMATION
         + PROTECTED_SACL_SECURITY_INFORMATION
-    local descriptor = ffi.new("PSECURITY_DESCRIPTOR_RELATIVE[1]")
-    local wsddl = ffi.new("wchar_t*[1]")
-    local wsddl_len = ffi.new("ULONG[1]")
-    assert(windows.set_process_privilege("SeBackupPrivilege", true))
-    assert(
-        advapi32.GetNamedSecurityInfoW(
-            windows.utf8_to_wide_char(file_name),
-            advapi32.SE_FILE_OBJECT,
-            DESCRIPTOR_INFO,
-            nil,
-            nil,
-            nil,
-            nil,
-            descriptor
-        ) == kernel32.ERROR_SUCCESS
-    )
-    assert(windows.set_process_privilege("SeBackupPrivilege", false))
-    assert(
-        advapi32.ConvertSecurityDescriptorToStringSecurityDescriptorW(
-            ffi.cast("PSECURITY_DESCRIPTOR", descriptor[0]),
-            SDDL_REVISION_1,
-            DESCRIPTOR_INFO,
-            wsddl,
-            wsddl_len
-        ) ~= 0
-    )
-    local sddl = windows.wide_char_to_utf8(wsddl[0], wsddl_len[0])
-    kernel32.LocalFree(wsddl[0])
-    kernel32.LocalFree(descriptor[0])
-    return sddl
+    return get_sddl(advapi32.SE_FILE_OBJECT, file_name, DESCRIPTOR_INFO)
+end
+
+function util.registry_sddl(key)
+    local DESCRIPTOR_INFO = OWNER_SECURITY_INFORMATION
+        + GROUP_SECURITY_INFORMATION
+        + DACL_SECURITY_INFORMATION
+        + PROTECTED_DACL_SECURITY_INFORMATION
+    return get_sddl(advapi32.SE_REGISTRY_KEY, key, DESCRIPTOR_INFO)
 end
 
 function util.process_sddl()

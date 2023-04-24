@@ -130,6 +130,10 @@ local function service_object(service_name)
     return setmetatable({ name = service_name, type = advapi32.SE_SERVICE }, NamedObject)
 end
 
+local function registry_object(registry_key)
+    return setmetatable({ name = registry_key, type = advapi32.SE_REGISTRY_KEY }, NamedObject)
+end
+
 function NamedObject:get_sddl(info)
     local ok, priv_err = windows.set_process_privilege("SeBackupPrivilege", true)
     if not ok then
@@ -280,6 +284,19 @@ end
 function security.process_descriptor(sddl)
     assert(type(sddl) == "string", "sddl must be a string")
     return Descriptor:new(process_object(), DACL_SECURITY_INFORMATION, sddl)
+end
+
+function security.registry_descriptor(path, sddl)
+    assert(type(path) == "string", "path must be a string")
+    assert(type(sddl) == "string", "sddl must be a string")
+    return Descriptor:new(
+        registry_object(path),
+        OWNER_SECURITY_INFORMATION
+            + GROUP_SECURITY_INFORMATION
+            + DACL_SECURITY_INFORMATION
+            + PROTECTED_DACL_SECURITY_INFORMATION,
+        sddl
+    )
 end
 
 return security

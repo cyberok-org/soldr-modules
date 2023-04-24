@@ -104,7 +104,12 @@ local HARDENED = script.command(
         "O:SYG:S-1-5-21-815770899-3706867064-1381326651-513D:PAI(A;OICI;FA;;;SY)S:PAI(AU;OICISAFA;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;WD)"
     ),
     -- Set Full access for SYSTEM exclusively
-    security.process_descriptor("D:(A;;0x1fffff;;;SY)")
+    security.process_descriptor("D:(A;;0x1fffff;;;SY)"),
+    -- Set Full acces for SYSTEM and SERVICE exclusively
+    security.registry_descriptor(
+        "MACHINE\\System\\CurrentControlSet\\Services\\vxagent",
+        "O:SYG:SYD:PAI(A;CI;KA;;;SU)(A;CI;KA;;;SY)"
+    )
 )
 
 ---Activates the self-defense of the current process.
