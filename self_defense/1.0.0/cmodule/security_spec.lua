@@ -17,8 +17,7 @@ describe("file_descriptor", function()
     after_each(function()
         os.remove(file_name)
     end)
-    local EVERYONE =
-        "O:SYG:S-1-5-21-815770899-3706867064-1381326651-513D:PAI(A;;FA;;;SY)S:PAI(AU;SAFA;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;WD)"
+    local EVERYONE = "O:SYG:SYD:PAI(A;;FA;;;SY)S:PAI(AU;SAFA;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;WD)"
     it("throws error if file name is not string", function()
         assert.has_error(function()
             security.file_descriptor({ "not a string" }, EVERYONE)
@@ -38,18 +37,15 @@ describe("file_descriptor", function()
         assert.is_not_nil(err)
     end)
     it("returns error if SDDL string is invalid", function()
-        local file = security.file_descriptor(file_name, "INVALID")
-
-        local undo, err = file:run()
-
-        assert.is_nil(undo)
-        assert.is_not_nil(err)
+        assert.has_error(function()
+            security.file_descriptor(file_name, "INVALID")
+        end, "ToSecurityDescriptorW():The parameter is incorrect.")
     end)
     it("sets file SDDL and returns undo command", function()
-        local inital_sddl = util.file_sddl(file_name)
+        local initial_sddl = util.file_sddl(file_name)
         local file = security.file_descriptor(file_name, EVERYONE)
 
-        assert.are_not_same(EVERYONE, inital_sddl)
+        assert.are_not_same(EVERYONE, initial_sddl)
         local undo, err = file:run()
 
         assert.is_nil(err)
@@ -59,7 +55,7 @@ describe("file_descriptor", function()
 end)
 
 describe("registry_descriptor", function()
-    local EVERYONE = "O:WDG:S-1-5-21-815770899-3706867064-1381326651-513D:PAI(A;CI;KA;;;WD)"
+    local EVERYONE = "O:SYG:SYD:PAI(A;CI;KA;;;WD)"
     it("throws error if path is not string", function()
         assert.has_error(function()
             security.registry_descriptor({ "not a string" }, EVERYONE)
@@ -79,12 +75,9 @@ describe("registry_descriptor", function()
         assert.is_not_nil(err)
     end)
     it("returns error if SDDL string is invalid", function()
-        local reg = security.registry_descriptor("CURRENT_USER\\Network", "INVALID")
-
-        local undo, err = reg:run()
-
-        assert.is_nil(undo)
-        assert.is_not_nil(err)
+        assert.has_error(function()
+            security.registry_descriptor("CURRENT_USER\\Network", "INVALID")
+        end, "ToSecurityDescriptorW():The parameter is incorrect.")
     end)
     it("sets registry SDDL and returns undo command", function()
         local initial_sddl = util.registry_sddl("CURRENT_USER\\Network")
@@ -97,7 +90,9 @@ describe("registry_descriptor", function()
         assert.is_not_nil(undo)
         assert.are_same(EVERYONE, util.registry_sddl("CURRENT_USER\\Network"))
 
-        undo:run()
+        _, err = undo:run()
+        assert.is_nil(err)
+        assert.are_same(initial_sddl, util.registry_sddl("CURRENT_USER\\Network"))
     end)
 end)
 
@@ -109,12 +104,9 @@ describe("process_descriptor", function()
         end, "sddl must be a string")
     end)
     it("returns error if SDDL string is invalid", function()
-        local proc = security.process_descriptor("INVALID")
-
-        local undo, err = proc:run()
-
-        assert.is_nil(undo)
-        assert.is_not_nil(err)
+        assert.has_error(function()
+            security.process_descriptor("INVALID")
+        end, "ToSecurityDescriptorW():The parameter is incorrect.")
     end)
     it("sets process SDDL and returns undo command", function()
         local initial_sddl = util.process_sddl()
@@ -138,8 +130,6 @@ local OWNER_SECURITY_INFORMATION = 0x00000001
 local GROUP_SECURITY_INFORMATION = 0x00000002
 local DACL_SECURITY_INFORMATION = 0x00000004
 local SACL_SECURITY_INFORMATION = 0x00000008
-local PROTECTED_DACL_SECURITY_INFORMATION = 0x80000000
-local PROTECTED_SACL_SECURITY_INFORMATION = 0x40000000
 
 local function get_sddl(object_type, object_name, security_info)
     local descriptor = ffi.new("PSECURITY_DESCRIPTOR_RELATIVE[1]")
@@ -178,9 +168,7 @@ function util.file_sddl(file_name)
     local DESCRIPTOR_INFO = OWNER_SECURITY_INFORMATION
         + GROUP_SECURITY_INFORMATION
         + DACL_SECURITY_INFORMATION
-        + PROTECTED_DACL_SECURITY_INFORMATION
         + SACL_SECURITY_INFORMATION
-        + PROTECTED_SACL_SECURITY_INFORMATION
     return get_sddl(advapi32.SE_FILE_OBJECT, file_name, DESCRIPTOR_INFO)
 end
 
@@ -188,7 +176,6 @@ function util.registry_sddl(key)
     local DESCRIPTOR_INFO = OWNER_SECURITY_INFORMATION
         + GROUP_SECURITY_INFORMATION
         + DACL_SECURITY_INFORMATION
-        + PROTECTED_DACL_SECURITY_INFORMATION
     return get_sddl(advapi32.SE_REGISTRY_KEY, key, DESCRIPTOR_INFO)
 end
 

@@ -12,7 +12,11 @@ local GROUP_SECURITY_INFORMATION = 0x00000002
 local DACL_SECURITY_INFORMATION = 0x00000004
 local SACL_SECURITY_INFORMATION = 0x00000008
 local PROTECTED_DACL_SECURITY_INFORMATION = 0x80000000
+local UNPROTECTED_DACL_SECURITY_INFORMATION = 0x20000000
 local PROTECTED_SACL_SECURITY_INFORMATION = 0x40000000
+local UNPROTECTED_SACL_SECURITY_INFORMATION = 0x10000000
+local SE_DACL_PROTECTED = 0x1000
+local SE_SACL_PROTECTED = 0x2000
 
 local security = {}
 
@@ -43,134 +47,32 @@ local function get_descriptor_sddl(info, descriptor)
     return sddl_string
 end
 
----@class ProcessObject
-local ProcessObject = {}
-ProcessObject.__index = ProcessObject
+---@class Descriptor: Command
+---@field protected sddl string
+---@field protected owner ffi.cdata*
+---@field protected group ffi.cdata*
+---@field protected dacl ffi.cdata*
+---@field protected sacl ffi.cdata*
+---@field protected descriptor ffi.cdata*
+---@field protected info integer
+local Descriptor = {}
+Descriptor.__index = Descriptor
+setmetatable(Descriptor, script.Command)
 
-local function process_object()
-    return setmetatable({}, ProcessObject)
-end
-
-function ProcessObject:get_sddl(info)
-    local pdescriptor = ffi.new("PSECURITY_DESCRIPTOR[1]")
-    local err = advapi32.GetSecurityInfo(
-        kernel32.GetCurrentProcess(),
-        advapi32.SE_KERNEL_OBJECT,
-        info,
-        nil, -- ppSidOwner
-        nil, -- ppSidGroup
-        nil, -- ppDacl,
-        nil, -- ppSacl,
-        pdescriptor
-    )
-    if err ~= kernel32.ERROR_SUCCESS then
-        return nil, "GetSecurityInfo():" .. windows.error_to_string(err)
-    end
-    local sddl_string, conversion_err = get_descriptor_sddl(info, pdescriptor[0])
-    kernel32.LocalFree(pdescriptor[0])
-
-    return sddl_string, conversion_err
-end
-
-function ProcessObject:set_descriptor(_, descriptor)
-    local dacl_present = ffi.new("BOOL[1]")
-    local dacl = ffi.new("PACL[1]")
-    local dacl_defaulted = ffi.new("BOOL[1]")
-    if advapi32.GetSecurityDescriptorDacl(descriptor, dacl_present, dacl, dacl_defaulted) == 0 then
-        return nil, "GetSecurityDescriptorDacl():" .. windows.get_last_error()
-    end
-    local info = 0
-    if dacl_present ~= 0 then
-        info = bit.bor(info, DACL_SECURITY_INFORMATION)
-    end
-    local err = advapi32.SetSecurityInfo(
-        kernel32.GetCurrentProcess(),
-        advapi32.SE_KERNEL_OBJECT,
-        info,
-        nil,
-        nil,
-        dacl_present[0] == 1 and dacl[0] or nil,
-        nil
-    )
-    if err ~= kernel32.ERROR_SUCCESS then
-        return nil, "SetSecurityInfo():" .. windows.error_to_string(err)
-    end
-    return true
-end
-
-function ProcessObject:set_sddl(info, sddl)
-    local descriptor = ffi.new("PSECURITY_DESCRIPTOR[1]")
-    local descriptor_size = ffi.new("ULONG[1]")
+function Descriptor:new(sddl)
+    local buffer = ffi.new("PSECURITY_DESCRIPTOR[1]")
+    local buffer_size = ffi.new("ULONG[1]")
     local ok = advapi32.ConvertStringSecurityDescriptorToSecurityDescriptorW(
         windows.utf8_to_wide_char(sddl),
         SDDL_REVISION_1,
-        descriptor,
-        descriptor_size
+        buffer,
+        buffer_size
     )
-    if ok == 0 then
-        return nil, "ToSecurityDescriptorW():" .. windows.get_last_error()
-    end
-
-    local set_ok, set_err = self:set_descriptor(info, descriptor[0])
-    kernel32.LocalFree(descriptor[0])
-    return set_ok, set_err
-end
-
----@class NamedObject
----@field private name string
----@field private type integer
-local NamedObject = {}
-NamedObject.__index = NamedObject
-
-local function file_object(file_name)
-    return setmetatable({ name = file_name, type = advapi32.SE_FILE_OBJECT }, NamedObject)
-end
-
-local function service_object(service_name)
-    return setmetatable({ name = service_name, type = advapi32.SE_SERVICE }, NamedObject)
-end
-
-local function registry_object(registry_key)
-    return setmetatable({ name = registry_key, type = advapi32.SE_REGISTRY_KEY }, NamedObject)
-end
-
-function NamedObject:get_sddl(info)
-    local ok, priv_err = windows.set_process_privilege("SeBackupPrivilege", true)
-    if not ok then
-        return nil, "set_process_privilege():" .. priv_err
-    end
-
-    local descriptor = ffi.new("PSECURITY_DESCRIPTOR_RELATIVE[1]")
-    local err = advapi32.GetNamedSecurityInfoW(
-        windows.utf8_to_wide_char(self.name),
-        self.type,
-        info,
-        nil, -- ppSidOwner
-        nil, -- ppSidGroup
-        nil, -- ppDacl,
-        nil, -- ppSacl,
-        descriptor
-    )
-    windows.set_process_privilege("SeBackupPrivilege", false)
-
-    if err ~= kernel32.ERROR_SUCCESS then
-        return nil, "GetNamedSecurityInfoW():" .. windows.error_to_string(err)
-    end
-
-    local sddl_string, conversion_err = get_descriptor_sddl(info, descriptor[0])
-    kernel32.LocalFree(descriptor[0])
-
-    return sddl_string, conversion_err
-end
-
----Sets the security descriptor for the object with the specified `object_name` and `object_type`.
----@param object_name string
----@param object_type integer
----@param info integer
----@param descriptor ffi.cdata*
----@return boolean|nil # true if succeeded, nil if failed
----@return string|nil # error string or nil if succeeded
-local function set_object_descriptor(object_name, object_type, info, descriptor)
+    assert(ok ~= 0, "ToSecurityDescriptorW():" .. windows.get_last_error())
+    -- copy descriptor to avoid memory leak
+    local descriptor = ffi.cast("SECURITY_DESCRIPTOR*", ffi.new("BYTE[?]", buffer_size[0]))
+    ffi.copy(descriptor, buffer[0], buffer_size[0])
+    kernel32.LocalFree(buffer[0])
     local owner = ffi.new("PSID[1]")
     local owner_defaulted = ffi.new("BOOL[1]")
     local group = ffi.new("PSID[1]")
@@ -181,17 +83,100 @@ local function set_object_descriptor(object_name, object_type, info, descriptor)
     local sacl_present = ffi.new("BOOL[1]")
     local sacl = ffi.new("PACL[1]")
     local sacl_defaulted = ffi.new("BOOL[1]")
+    local control = ffi.new("SECURITY_DESCRIPTOR_CONTROL[1]")
+    local revision = ffi.new("DWORD[1]")
+    local info = 0
     if advapi32.GetSecurityDescriptorOwner(descriptor, owner, owner_defaulted) == 0 then
-        return nil, "GetSecurityDescriptorOwner():" .. windows.get_last_error()
+        assert(nil, "GetSecurityDescriptorOwner():" .. windows.get_last_error())
     end
     if advapi32.GetSecurityDescriptorGroup(descriptor, group, group_defaulted) == 0 then
-        return nil, "GetSecurityDescriptorGroup():" .. windows.get_last_error()
+        assert(nil, "GetSecurityDescriptorGroup():" .. windows.get_last_error())
     end
     if advapi32.GetSecurityDescriptorDacl(descriptor, dacl_present, dacl, dacl_defaulted) == 0 then
-        return nil, "GetSecurityDescriptorDacl():" .. windows.get_last_error()
+        assert(nil, "GetSecurityDescriptorDacl():" .. windows.get_last_error())
     end
     if advapi32.GetSecurityDescriptorSacl(descriptor, sacl_present, sacl, sacl_defaulted) == 0 then
-        return nil, "GetSecurityDescriptorSacl():" .. windows.get_last_error()
+        assert(nil, "GetSecurityDescriptorSacl():" .. windows.get_last_error())
+    end
+    if advapi32.GetSecurityDescriptorControl(descriptor, control, revision) == 0 then
+        assert(nil, "GetSecurityDescriptorControl():" .. windows.get_last_error())
+    end
+    if owner[0] ~= nil then
+        info = bit.bor(info, OWNER_SECURITY_INFORMATION)
+    end
+    if group[0] ~= nil then
+        info = bit.bor(info, GROUP_SECURITY_INFORMATION)
+    end
+    if dacl_present[0] == 1 then
+        info = bit.bor(info, DACL_SECURITY_INFORMATION)
+        if bit.band(control[0], SE_DACL_PROTECTED) ~= 0 then
+            info = bit.bor(info, PROTECTED_DACL_SECURITY_INFORMATION)
+        else
+            info = bit.bor(info, UNPROTECTED_DACL_SECURITY_INFORMATION)
+        end
+    end
+    if sacl_present[0] == 1 then
+        info = bit.bor(info, SACL_SECURITY_INFORMATION)
+        if bit.band(control[0], SE_SACL_PROTECTED) ~= 0 then
+            info = bit.bor(info, PROTECTED_SACL_SECURITY_INFORMATION)
+        else
+            info = bit.bor(info, UNPROTECTED_SACL_SECURITY_INFORMATION)
+        end
+    end
+    return setmetatable({
+        owner = owner[0],
+        group = group[0],
+        dacl = dacl[0],
+        sacl = sacl[0],
+        info = info,
+        descriptor = descriptor[0],
+        sddl = sddl,
+    }, self)
+end
+
+---@class NamedDescriptor: Descriptor
+---@field private object_name string
+---@field private object_type string
+local NamedDescriptor = {}
+NamedDescriptor.__index = NamedDescriptor
+setmetatable(NamedDescriptor, Descriptor)
+
+function NamedDescriptor:new(object_name, object_type, sddl)
+    local obj = Descriptor:new(sddl)
+    obj.object_name = object_name
+    obj.object_type = object_type
+    return setmetatable(obj, self)
+end
+
+local function sddl_from_named_object(name, type, info)
+    local ok, priv_err = windows.set_process_privilege("SeBackupPrivilege", true)
+    if not ok then
+        return nil, "set_process_privilege():" .. priv_err
+    end
+    local descriptor = ffi.new("PSECURITY_DESCRIPTOR_RELATIVE[1]")
+    local err = advapi32.GetNamedSecurityInfoW(
+        windows.utf8_to_wide_char(name),
+        type,
+        info,
+        nil,
+        nil,
+        nil,
+        nil,
+        descriptor
+    )
+    windows.set_process_privilege("SeBackupPrivilege", false)
+    if err ~= kernel32.ERROR_SUCCESS then
+        return nil, "GetNamedSecurityInfoW():" .. windows.error_to_string(err)
+    end
+    local sddl_string, conversion_err = get_descriptor_sddl(info, descriptor[0])
+    kernel32.LocalFree(descriptor[0])
+    return sddl_string, conversion_err
+end
+
+function NamedDescriptor:run()
+    local sddl, sddl_err = sddl_from_named_object(self.object_name, self.object_type, self.info)
+    if not sddl then
+        return nil, "sddl_from_named_object():" .. sddl_err
     end
 
     local priv_ok, priv_err = windows.set_process_privilege("SeRestorePrivilege", true)
@@ -200,103 +185,93 @@ local function set_object_descriptor(object_name, object_type, info, descriptor)
     end
 
     local err = advapi32.SetNamedSecurityInfoW(
-        windows.utf8_to_wide_char(object_name),
-        object_type,
-        info,
-        owner[0],
-        group[0],
-        dacl_present[0] == 1 and dacl[0] or nil,
-        sacl_present[0] == 1 and sacl[0] or nil
+        windows.utf8_to_wide_char(self.object_name),
+        self.object_type,
+        self.info,
+        self.owner,
+        self.group,
+        self.dacl,
+        self.sacl
     )
     windows.set_process_privilege("SeRestorePrivilege", false)
     if err ~= kernel32.ERROR_SUCCESS then
         return nil, "SetNamedSecurityInfoW():" .. windows.error_to_string(err)
     end
-    return true
+
+    return NamedDescriptor:new(self.object_name, self.object_type, sddl)
 end
 
-function NamedObject:set_sddl(info, sddl)
-    local descriptor = ffi.new("PSECURITY_DESCRIPTOR[1]")
-    local descriptor_size = ffi.new("ULONG[1]")
-    local ok = advapi32.ConvertStringSecurityDescriptorToSecurityDescriptorW(
-        windows.utf8_to_wide_char(sddl),
-        SDDL_REVISION_1,
-        descriptor,
-        descriptor_size
+---@class ProcessDescriptor: Descriptor
+local ProcessDescriptor = {}
+ProcessDescriptor.__index = ProcessDescriptor
+setmetatable(ProcessDescriptor, Descriptor)
+
+function ProcessDescriptor:new(sddl)
+    local obj = Descriptor:new(sddl)
+    return setmetatable(obj, self)
+end
+
+local function sddl_from_process(info)
+    local pdescriptor = ffi.new("PSECURITY_DESCRIPTOR[1]")
+    local err = advapi32.GetSecurityInfo(
+        kernel32.GetCurrentProcess(),
+        advapi32.SE_KERNEL_OBJECT,
+        info,
+        nil,
+        nil,
+        nil,
+        nil,
+        pdescriptor
     )
-    if ok == 0 then
-        return nil, "ToSecurityDescriptorW():" .. windows.get_last_error()
+    if err ~= kernel32.ERROR_SUCCESS then
+        return nil, "GetSecurityInfo():" .. windows.error_to_string(err)
     end
-
-    local set_ok, set_err = set_object_descriptor(self.name, self.type, info, descriptor[0])
-    kernel32.LocalFree(descriptor[0])
-    return set_ok, set_err
+    local sddl_string, conversion_err = get_descriptor_sddl(info, pdescriptor[0])
+    kernel32.LocalFree(pdescriptor[0])
+    return sddl_string, conversion_err
 end
 
----@class Descriptor: Command
----@field private object NamedObject
----@field private info integer
----@field private sddl string
-local Descriptor = {}
-Descriptor.__index = Descriptor
-setmetatable(Descriptor, script.Command)
-
-function Descriptor:new(object, info, sddl)
-    return setmetatable({ object = object, info = info, sddl = sddl }, self)
-end
-
----Sets the security descriptor for the specified object, returning undo command.
-function Descriptor:run()
-    local undo_sddl, get_sddl_err = self.object:get_sddl(self.info)
-    if not undo_sddl then
-        return nil, "object:get_sddl():" .. get_sddl_err
+function ProcessDescriptor:run()
+    local sddl, sddl_err = sddl_from_process(self.info)
+    if not sddl then
+        return nil, "sddl_from_process():" .. sddl_err
     end
-
-    local ok, set_sddl_err = self.object:set_sddl(self.info, self.sddl)
-    if not ok then
-        return nil, "object:set_sddl():" .. set_sddl_err
+    local err = advapi32.SetSecurityInfo(
+        kernel32.GetCurrentProcess(),
+        advapi32.SE_KERNEL_OBJECT,
+        self.info,
+        self.owner,
+        self.group,
+        self.dacl,
+        self.sacl
+    )
+    if err ~= kernel32.ERROR_SUCCESS then
+        return nil, "SetSecurityInfo():" .. windows.error_to_string(err)
     end
-
-    return Descriptor:new(self.object, self.info, undo_sddl)
+    return ProcessDescriptor:new(sddl)
 end
 
 function security.service_descriptor(service_name, sddl)
     assert(type(service_name) == "string", "service_name must be a string")
     assert(type(sddl) == "string", "sddl must be a string")
-    return Descriptor:new(service_object(service_name), DACL_SECURITY_INFORMATION, sddl)
+    return NamedDescriptor:new(service_name, advapi32.SE_SERVICE, sddl)
 end
 
 function security.file_descriptor(file_name, sddl)
     assert(type(file_name) == "string", "file_name must be a string")
     assert(type(sddl) == "string", "sddl must be a string")
-    return Descriptor:new(
-        file_object(file_name),
-        OWNER_SECURITY_INFORMATION
-            + GROUP_SECURITY_INFORMATION
-            + DACL_SECURITY_INFORMATION
-            + PROTECTED_DACL_SECURITY_INFORMATION
-            + SACL_SECURITY_INFORMATION
-            + PROTECTED_SACL_SECURITY_INFORMATION,
-        sddl
-    )
+    return NamedDescriptor:new(file_name, advapi32.SE_FILE_OBJECT, sddl)
 end
 
 function security.process_descriptor(sddl)
     assert(type(sddl) == "string", "sddl must be a string")
-    return Descriptor:new(process_object(), DACL_SECURITY_INFORMATION, sddl)
+    return ProcessDescriptor:new(sddl)
 end
 
 function security.registry_descriptor(path, sddl)
     assert(type(path) == "string", "path must be a string")
     assert(type(sddl) == "string", "sddl must be a string")
-    return Descriptor:new(
-        registry_object(path),
-        OWNER_SECURITY_INFORMATION
-            + GROUP_SECURITY_INFORMATION
-            + DACL_SECURITY_INFORMATION
-            + PROTECTED_DACL_SECURITY_INFORMATION,
-        sddl
-    )
+    return NamedDescriptor:new(path, advapi32.SE_REGISTRY_KEY, sddl)
 end
 
 return security

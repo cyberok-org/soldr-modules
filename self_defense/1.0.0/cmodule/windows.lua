@@ -35,7 +35,7 @@ function windows.wide_char_to_utf8(str, size)
         return nil
     end
 
-    local utf8 = ffi.new("char[?]", nsize)
+    local utf8 = ffi.new("char[?]", nsize + 1)
     nsize = kernel32.WideCharToMultiByte(kernel32.CP_UTF8, 0, str, size, utf8, nsize, nil, nil)
     return ffi.string(utf8)
 end
