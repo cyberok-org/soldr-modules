@@ -52,6 +52,19 @@ describe("file_descriptor", function()
         assert.is_not_nil(undo)
         assert.are_same(EVERYONE, util.file_sddl(file_name))
     end)
+    it("is convertable to dict", function()
+        local file = security.file_descriptor(file_name, EVERYONE)
+
+        local dict = file:dict()
+
+        assert.are_same({
+            name = "security",
+            type = "named_object",
+            object_name = file_name,
+            object_type = advapi32.SE_FILE_OBJECT,
+            sddl = EVERYONE,
+        }, dict)
+    end)
 end)
 
 describe("registry_descriptor", function()
@@ -94,6 +107,19 @@ describe("registry_descriptor", function()
         assert.is_nil(err)
         assert.are_same(initial_sddl, util.registry_sddl("CURRENT_USER\\Network"))
     end)
+    it("is convertable to dict", function()
+        local reg = security.registry_descriptor("CURRENT_USER\\Network", EVERYONE)
+
+        local dict = reg:dict()
+
+        assert.are_same({
+            name = "security",
+            type = "named_object",
+            object_name = "CURRENT_USER\\Network",
+            object_type = advapi32.SE_REGISTRY_KEY,
+            sddl = EVERYONE,
+        }, dict)
+    end)
 end)
 
 describe("process_descriptor", function()
@@ -122,6 +148,57 @@ describe("process_descriptor", function()
         local _, undo_err = undo:run()
         assert.is_nil(undo_err)
         assert.are_same(initial_sddl, util.process_sddl())
+    end)
+    it("is convertable to dict", function()
+        local proc = security.process_descriptor(SYSTEM_ONLY)
+
+        local dict = proc:dict()
+
+        assert.are_same({ name = "security", type = "current_process", sddl = SYSTEM_ONLY }, dict)
+    end)
+end)
+
+describe("load", function()
+    it("throws error if cmd_dict is not a table", function()
+        assert.has_error(function()
+            security.load("not a table")
+        end, "cmd_dict must be a table")
+    end)
+    it("throws error if cmd_dict is not security command", function()
+        assert.has_error(function()
+            security.load({ name = "not a security" })
+        end, "cmd_dict.name must be 'security'")
+    end)
+    it("throws error if cmd_dict has no type", function()
+        assert.has_error(function()
+            security.load({ name = "security" })
+        end, "cmd_dict.type must be a string")
+    end)
+    it("loads process descriptor", function()
+        local cmd_dict = {
+            name = "security",
+            type = "current_process",
+            sddl = "D:(A;;0x1fffff;;;SY)",
+        }
+
+        local cmd = security.load(cmd_dict)
+
+        assert.is_not_nil(cmd)
+        assert.are_same(cmd_dict, cmd:dict())
+    end)
+    it("loads named descriptor", function()
+        local cmd_dict = {
+            name = "security",
+            type = "named_object",
+            object_type = advapi32.SE_FILE_OBJECT,
+            object_name = "C:\\Windows\\System32\\cmd.exe",
+            sddl = "D:(A;;0x1fffff;;;SY)",
+        }
+
+        local cmd = security.load(cmd_dict)
+
+        assert.is_not_nil(cmd)
+        assert.are_same(cmd_dict, cmd:dict())
     end)
 end)
 

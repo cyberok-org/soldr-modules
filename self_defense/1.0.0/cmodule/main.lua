@@ -1,3 +1,4 @@
+local json = require("cjson")
 local path = require("path")
 
 local process = require("process")
@@ -112,6 +113,27 @@ local HARDENED = script.command(
     )
 )
 
+local function save(cmd, backup_path)
+    local backup, err = io.open(backup_path, "rb")
+    if not backup then
+        backup, err = io.open(backup_path, "wb")
+        if not backup then
+            return nil, err
+        end
+        backup:write(json.encode(cmd:dict()))
+    end
+    backup:close()
+    return true
+end
+
+local function load(backup_path)
+    local backup, err = io.open(backup_path, "rb")
+    if not backup then
+        return nil, err
+    end
+    return script.load(json.decode(backup:read("*a")), registry, process, security)
+end
+
 ---Activates the self-defense of the current process.
 ---@return boolean|nil ok whether the self-defense was successfully activated
 ---@return string|nil error string explaining the problem, if any
@@ -121,7 +143,12 @@ local function activate()
         __log.errorf("failed to activate self-defense: %s", err)
         return nil, err
     end
-    -- TODO: store old profile if it wasn't stored yet
+    local backup_path = path.combine(path.dir((__api.get_exec_path())), "self-defense.bak")
+    local ok, err_save = save(undo, backup_path)
+    if not ok then
+        __log.errorf("failed to save backup: %s", err_save)
+        return nil, err_save
+    end
     return true
 end
 
@@ -129,7 +156,17 @@ end
 ---@return boolean|nil ok whether the self-defense was successfully deactivated
 ---@return string|nil error string explaining the problem, if any
 local function deactivate()
-    -- TODO: restore old profile
+    local backup_path = path.combine(path.dir((__api.get_exec_path())), "self-defense.bak")
+    local undo, err = load(backup_path)
+    if not undo then
+        __log.errorf("failed to load backup: %s", err)
+        return nil, err
+    end
+    _, err = undo:run()
+    if err then
+        __log.errorf("failed to deactivate self-defense: %s", err)
+        return nil, err
+    end
     return true
 end
 
@@ -138,7 +175,7 @@ end
 ---@param data string
 local function control(cmtype, data)
     if cmtype == "quit" and data == "module_remove" then
-        deactivate()
+        return deactivate()
     end
     return true
 end

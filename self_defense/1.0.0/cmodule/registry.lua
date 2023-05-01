@@ -6,7 +6,7 @@ local kernel32 = require("waffi.windows.kernel32")
 local script = require("script")
 local windows = require("windows")
 
-local registry = {}
+local registry = { module = "registry" }
 
 ---@class RegPath
 ---@field package tree ffi.cdata*
@@ -98,6 +98,43 @@ function KeyValue:run()
     return KeyValue:new(self.path, self.key, undo_value)
 end
 
+---Returns the hex string representation of the data.
+---@param data ffi.cdata*
+---@param size integer
+---@return string
+local function hex_dump(data, size)
+    local result = ""
+    for i = 0, size - 1 do
+        result = result .. string.format("%02x", data[i])
+    end
+    return result
+end
+
+---Returns a dictionary representation of the RegValue.
+---@param value RegValue
+---@return table
+local function value_save(value)
+    return {
+        type = tonumber(value.type),
+        data = hex_dump(value.data, value.size),
+        size = value.size,
+    }
+end
+
+---Returns a dictionary representation of the keyvalue command.
+---@return KeyValue
+function KeyValue:dict()
+    return {
+        name = "registry",
+        path = {
+            tree = tonumber(ffi.cast("intptr_t", self.path.tree)),
+            subkey = windows.wide_char_to_utf8(self.path.path),
+        },
+        key = self.key,
+        value = value_save(self.value),
+    }
+end
+
 ---Creates and returns a new `KeyValue` instance.
 ---@param path RegPath
 ---@param key string
@@ -139,6 +176,28 @@ function registry.value_bin(hex)
     end
     local bin = ffi.new("uint8_t[?]", #bytes, bytes)
     return { type = advapi32.REG_BINARY, data = bin, size = #bytes }
+end
+
+local function path_load(path)
+    return {
+        tree = ffi.cast("HKEY", path.tree),
+        path = windows.utf8_to_wide_char(path.subkey),
+    }
+end
+
+local function value_load(value)
+    return registry.value_bin(value.data)
+end
+
+---Loads registry commands from the specified `cmd_dict` table.
+---@param cmd_dict table
+---@return KeyValue # Loaded registry command
+function registry.load(cmd_dict)
+    assert(type(cmd_dict) == "table", "cmd_dict must be a table")
+    assert(cmd_dict.name == "registry", "cmd_dict.name must be 'registry'")
+    local path = path_load(cmd_dict.path)
+    local value = value_load(cmd_dict.value)
+    return KeyValue:new(path, cmd_dict.key, value)
 end
 
 return registry

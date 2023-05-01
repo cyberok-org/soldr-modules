@@ -75,6 +75,26 @@ describe("key_value", function()
             registry.key_value(path, key, value)
         end, "value.size must be number")
     end)
+    it("is convertable to dict", function()
+        local path, key, value = get_test_path_key_value()
+        local kv = registry.key_value(path, key, value)
+
+        local dict = kv:dict()
+
+        assert.are_same({
+            name = "registry",
+            path = {
+                tree = advapi32.HKEY_CURRENT_USER,
+                subkey = "SOFTWARE\\Test",
+            },
+            key = key,
+            value = {
+                type = advapi32.REG_BINARY,
+                data = "00",
+                size = 1,
+            },
+        }, dict)
+    end)
 end)
 
 describe("KeyValue:run", function()
@@ -151,5 +171,38 @@ describe("value_bin", function()
         assert.has_error(function()
             registry.value_bin(hex)
         end, "invalid hex chars")
+    end)
+end)
+
+describe("load", function()
+    it("throws error if cmd_dict is not a table", function()
+        assert.has_error(function()
+            registry.load("not a table")
+        end, "cmd_dict must be a table")
+    end)
+    it("throws error if cmd_dict is not security command", function()
+        assert.has_error(function()
+            registry.load({ name = "not a registry" })
+        end, "cmd_dict.name must be 'registry'")
+    end)
+    it("loads key value", function()
+        local cmd_dict = {
+            name = "registry",
+            path = {
+                tree = advapi32.HKEY_CURRENT_USER,
+                subkey = "SOFTWARE\\Test",
+            },
+            key = "test",
+            value = {
+                type = advapi32.REG_BINARY,
+                data = "00112233445566778899aabbccddeeff",
+                size = 16,
+            },
+        }
+
+        local cmd = registry.load(cmd_dict)
+
+        assert.is_not_nil(cmd)
+        assert.are_same(cmd_dict, cmd:dict())
     end)
 end)

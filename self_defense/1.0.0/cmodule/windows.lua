@@ -26,9 +26,12 @@ end
 
 ---Converts a wide character (UTF-16) string to a UTF-8 encoded string.
 ---@param str ffi.cdata* wide character string
----@param size number size of the wide character string
+---@param size number? size of the wide character string
 ---@return string|nil # UTF-8 encoded string or nil if conversion failed
 function windows.wide_char_to_utf8(str, size)
+    if not size then
+        size = -1
+    end
     local nsize = kernel32.WideCharToMultiByte(kernel32.CP_UTF8, 0, str, size, nil, 0, nil, nil)
 
     if nsize <= 0 then

@@ -18,7 +18,7 @@ local UNPROTECTED_SACL_SECURITY_INFORMATION = 0x10000000
 local SE_DACL_PROTECTED = 0x1000
 local SE_SACL_PROTECTED = 0x2000
 
-local security = {}
+local security = { module = "security" }
 
 ---Converts a security descriptor to a SDDL string.
 ---@param info number flag combination indicating the security descriptor
@@ -201,6 +201,16 @@ function NamedDescriptor:run()
     return NamedDescriptor:new(self.object_name, self.object_type, sddl)
 end
 
+function NamedDescriptor:dict()
+    return {
+        name = "security",
+        type = "named_object",
+        object_name = self.object_name,
+        object_type = self.object_type,
+        sddl = self.sddl,
+    }
+end
+
 ---@class ProcessDescriptor: Descriptor
 local ProcessDescriptor = {}
 ProcessDescriptor.__index = ProcessDescriptor
@@ -251,6 +261,14 @@ function ProcessDescriptor:run()
     return ProcessDescriptor:new(sddl)
 end
 
+function ProcessDescriptor:dict()
+    return {
+        name = "security",
+        type = "current_process",
+        sddl = self.sddl,
+    }
+end
+
 function security.service_descriptor(service_name, sddl)
     assert(type(service_name) == "string", "service_name must be a string")
     assert(type(sddl) == "string", "sddl must be a string")
@@ -272,6 +290,19 @@ function security.registry_descriptor(path, sddl)
     assert(type(path) == "string", "path must be a string")
     assert(type(sddl) == "string", "sddl must be a string")
     return NamedDescriptor:new(path, advapi32.SE_REGISTRY_KEY, sddl)
+end
+
+---Loads a descriptor from a dictionary
+---@param cmd_dict any
+---@return Descriptor
+function security.load(cmd_dict)
+    assert(type(cmd_dict) == "table", "cmd_dict must be a table")
+    assert(cmd_dict.name == "security", "cmd_dict.name must be 'security'")
+    assert(type(cmd_dict.type) == "string", "cmd_dict.type must be a string")
+    if cmd_dict.type == "current_process" then
+        return security.process_descriptor(cmd_dict.sddl)
+    end
+    return NamedDescriptor:new(cmd_dict.object_name, cmd_dict.object_type, cmd_dict.sddl)
 end
 
 return security

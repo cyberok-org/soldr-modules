@@ -5,7 +5,7 @@ local kernel32 = require("waffi.windows.kernel32")
 local script = require("script")
 local windows = require("windows")
 
-local process = {}
+local process = { module = "process" }
 
 ffi.cdef([[
 typedef enum _PROCESS_MITIGATION_POLICY {
@@ -306,12 +306,25 @@ function MitigationPolicy:run()
     return MitigationPolicy:new(self.name, undo_params)
 end
 
+function MitigationPolicy:dict()
+    return { name = "process", policy = self.name, params = self.params }
+end
+
 ---Creates and returns a new `MitigationPolicy` instance.
 ---@param policy string
 ---@param params {[string]: boolean}
 ---@return MitigationPolicy
 function process.mitigation_policy(policy, params)
     return MitigationPolicy:new(policy, params)
+end
+
+---Loads exploit mitigation policy from the given dictionary.
+---@param cmd_dict table
+---@return MitigationPolicy
+function process.load(cmd_dict)
+    assert(type(cmd_dict) == "table", "cmd_dict must be a table")
+    assert(cmd_dict.name == "process", "cmd_dict.name must be 'process'")
+    return MitigationPolicy:new(cmd_dict.policy, cmd_dict.params)
 end
 
 return process

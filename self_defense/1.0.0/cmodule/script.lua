@@ -35,11 +35,47 @@ function Command:run()
     return Command:new(unpack(undo_cmds))
 end
 
+---Returns a dictionary representation of the command.
+---@return table
+function Command:dict()
+    local subcommands = {}
+    for _, cmd in ipairs(self.subcommands) do
+        table.insert(subcommands, cmd:dict())
+    end
+    return {
+        name = "script",
+        subcommands = subcommands,
+    }
+end
+
 ---Creates and returns a new `Command` instance with provided subcommands.
 ---@param ... Command subcommands for the new instance
 ---@return Command
 function script.command(...)
     return Command:new(...)
+end
+
+local function get_loader(name, ...)
+    for _, loader in ipairs({ ... }) do
+        if loader.module == name then
+            return loader
+        end
+    end
+end
+
+function script.load(cmd_dict, ...)
+    assert(type(cmd_dict) == "table", "cmd_dict must be table")
+    assert(cmd_dict.name == "script", "cmd_dict.name must be 'script'")
+    local subcommands = {}
+    for _, subcmd in ipairs(cmd_dict.subcommands) do
+        local loader = get_loader(subcmd.name, ...)
+        if loader then
+            table.insert(subcommands, loader.load(subcmd))
+        else
+            table.insert(subcommands, script.load(subcmd, ...))
+        end
+    end
+    return script.command(unpack(subcommands))
 end
 
 return script
