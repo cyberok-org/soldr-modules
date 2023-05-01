@@ -138,10 +138,12 @@ end
 ---@return boolean|nil ok whether the self-defense was successfully activated
 ---@return string|nil error string explaining the problem, if any
 local function activate()
-    local undo, err = HARDENED:run()
+    local undo, errors = HARDENED:run()
     if not undo then
-        __log.errorf("failed to activate self-defense: %s", err)
-        return nil, err
+        for _, v in ipairs(errors) do
+            __log.errorf("failed to activate self-defense: %s", v)
+        end
+        return nil, errors[1]
     end
     local backup_path = path.combine(path.dir((__api.get_exec_path())), "self-defense.bak")
     local ok, err_save = save(undo, backup_path)
@@ -162,10 +164,12 @@ local function deactivate()
         __log.errorf("failed to load backup: %s", err)
         return nil, err
     end
-    _, err = undo:run()
-    if err then
-        __log.errorf("failed to deactivate self-defense: %s", err)
-        return nil, err
+    local _, errors = undo:run()
+    if #errors > 0 then
+        for _, v in ipairs(errors) do
+            __log.errorf("failed to deactivate self-defense: %s", v)
+        end
+        return nil, errors[1]
     end
     return true
 end

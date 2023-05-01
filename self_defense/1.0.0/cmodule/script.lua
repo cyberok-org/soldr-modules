@@ -20,19 +20,20 @@ end
 ---Executes subcommands, returning undo command.
 ---Attempts to undo previously executed subcommands on failure.
 ---@return Command|nil # Undo command
----@return error|nil   # Error string, if any
+---@return error[]   # array of errors, if any
 function Command:run()
     ---@type Command[]
     local undo_cmds = {}
+    local errors = {}
     for _, cmd in ipairs(self.subcommands) do
         local undo, err = cmd:run()
         if not undo then
-            Command:new(unpack(undo_cmds)):run()
-            return nil, err
+            table.insert(errors, err)
+        else
+            table.insert(undo_cmds, 1, undo)
         end
-        table.insert(undo_cmds, 1, undo)
     end
-    return Command:new(unpack(undo_cmds))
+    return Command:new(unpack(undo_cmds)), errors
 end
 
 ---Returns a dictionary representation of the command.
