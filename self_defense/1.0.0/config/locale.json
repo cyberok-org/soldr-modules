@@ -11,10 +11,44 @@
     },
     "config": {},
     "secure_config": {},
-    "fields": {},
+    "fields": {
+        "message": {
+            "en": {
+                "title": "message",
+                "description": "Error text"
+            },
+            "ru": {
+                "title": "ошибка",
+                "description": "Текст ошибки"
+            }
+        },
+        "name": {
+            "en": {
+                "title": "name",
+                "description": "name"
+            },
+            "ru": {
+                "title": "имя ошибки",
+                "description": "имя ошибки"
+            }
+        }
+    },
     "actions": {},
-    "events": {},
+    "events": {
+        "cyberok_self_defense_error": {
+            "en": {
+                "title": "error",
+                "description": ""
+            },
+            "ru": {
+                "title": "ошибка",
+                "description": ""
+            }
+        }
+    },
     "action_config": {},
-    "event_config": {},
+    "event_config": {
+        "cyberok_self_defense_error": {}
+    },
     "tags": {}
 }

@@ -1,3 +1,4 @@
+require("engine")
 local json = require("cjson")
 local path = require("path")
 
@@ -5,6 +6,26 @@ local process = require("process")
 local registry = require("registry")
 local script = require("script")
 local security = require("security")
+
+local event_engine
+local action_engine
+
+local function push_event(name, data)
+    local result, list = event_engine:push_event({
+        name = name,
+        data = data or {},
+    })
+    if result then
+        action_engine:exec(__aid, list)
+    end
+end
+
+local function error(name, message)
+    push_event("cyberok_self_defense_error", {
+        name    = name,
+        message = tostring(message),
+    })
+end
 
 local function execution_options(filepath)
     return string.format(
@@ -180,6 +201,14 @@ end
 local function control(cmtype, data)
     if cmtype == "quit" and data == "module_remove" then
         return deactivate()
+    elseif cmtype == "update_config" then
+        local prefix_db = __gid .. "."
+        local fields_schema = __config.get_fields_schema()
+        local event_config = __config.get_current_event_config()
+        local module_info = __config.get_module_info()
+
+        event_engine = CEventEngine(fields_schema, event_config, module_info, prefix_db, false)
+        action_engine = CActionEngine({}, false)
     end
     return true
 end

@@ -14,7 +14,12 @@
     },
     "system": false,
     "actions": [],
-    "events": [],
-    "fields": [],
+    "events": [
+        "cyberok_self_defense_error"
+    ],
+    "fields": [
+        "name",
+        "message"
+    ],
     "tags": []
 }
