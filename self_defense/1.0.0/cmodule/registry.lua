@@ -58,12 +58,12 @@ local function get_key_value(path, key)
     if err == kernel32.ERROR_FILE_NOT_FOUND then
         return nil
     elseif err ~= kernel32.ERROR_SUCCESS then
-        return nil, windows.error_to_string(err)
+        return nil, "RegGetValue():" .. windows.error_to_string(err)
     end
     local value_data = ffi.new("uint8_t[?]", value_size[0])
     err = reg_get_val(value_data)
     if err ~= kernel32.ERROR_SUCCESS then
-        return nil, windows.error_to_string(err)
+        return nil, "reg_get_val():" .. windows.error_to_string(err)
     end
     return { type = value_type[0], data = value_data, size = value_size[0] }
 end
@@ -75,7 +75,7 @@ function KeyValue:run()
     local wkey = windows.utf8_to_wide_char(self.key)
     local undo_value, err = get_key_value(self.path, wkey)
     if err and not undo_value then
-        return nil, err
+        return nil, "get_key_value():" .. err
     end
     if self.value then
         err = advapi32.RegSetKeyValueW(
@@ -87,12 +87,12 @@ function KeyValue:run()
             self.value.size
         )
         if err ~= kernel32.ERROR_SUCCESS then
-            return nil, windows.error_to_string(err)
+            return nil, "RegSetKeyValue():" .. windows.error_to_string(err)
         end
     else
         err = advapi32.RegDeleteKeyValueW(self.path.tree, self.path.path, wkey)
         if err ~= kernel32.ERROR_SUCCESS and err ~= kernel32.ERROR_FILE_NOT_FOUND then
-            return nil, windows.error_to_string(err)
+            return nil, "RegDeleteKeyValue():" .. windows.error_to_string(err)
         end
     end
     return KeyValue:new(self.path, self.key, undo_value)

@@ -292,7 +292,7 @@ function MitigationPolicy:run()
     local pid = kernel32.GetCurrentProcess()
     local ret = ffi.C.GetProcessMitigationPolicy(pid, policy.id, buf, buf_len)
     if not ret then
-        return nil, windows.get_last_error()
+        return nil, "GetProcessMitigationPolicy():" .. windows.get_last_error()
     end
     local undo_params = {}
     for key, value in pairs(self.params) do
@@ -301,7 +301,7 @@ function MitigationPolicy:run()
     end
     ret = ffi.C.SetProcessMitigationPolicy(policy.id, buf, buf_len)
     if not ret then
-        return nil, windows.get_last_error()
+        return nil, "SetProcessMitigationPolicy():" .. windows.get_last_error()
     end
     return MitigationPolicy:new(self.name, undo_params)
 end
