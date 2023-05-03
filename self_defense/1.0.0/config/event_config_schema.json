@@ -31,10 +31,56 @@
                     "type": "object"
                 }
             ]
+        },
+        "cyberok_self_defense_started": {
+            "allOf": [
+                {
+                    "$ref": "#/definitions/events.atomic"
+                },
+                {
+                    "properties": {
+                        "fields": {
+                            "default": [],
+                            "items": {
+                                "type": "string"
+                            },
+                            "type": "array"
+                        }
+                    },
+                    "required": [
+                        "fields"
+                    ],
+                    "type": "object"
+                }
+            ]
+        },
+        "cyberok_self_defense_stopped": {
+            "allOf": [
+                {
+                    "$ref": "#/definitions/events.atomic"
+                },
+                {
+                    "properties": {
+                        "fields": {
+                            "default": [],
+                            "items": {
+                                "type": "string"
+                            },
+                            "type": "array"
+                        }
+                    },
+                    "required": [
+                        "fields"
+                    ],
+                    "type": "object"
+                }
+            ]
         }
     },
     "required": [
-        "cyberok_self_defense_error"
+        "cyberok_self_defense_error",
+        "cyberok_self_defense_started",
+        "cyberok_self_defense_stopped"
     ],
     "type": "object"
 }

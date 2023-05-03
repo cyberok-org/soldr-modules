@@ -15,7 +15,9 @@
     "system": false,
     "actions": [],
     "events": [
-        "cyberok_self_defense_error"
+        "cyberok_self_defense_error",
+        "cyberok_self_defense_started",
+        "cyberok_self_defense_stopped"
     ],
     "fields": [
         "name",

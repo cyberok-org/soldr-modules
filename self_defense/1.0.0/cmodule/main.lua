@@ -20,12 +20,21 @@ local function push_event(name, data)
     end
 end
 
-local function error(name, message)
+local function error(name, ...)
     push_event("cyberok_self_defense_error", {
         name    = name,
-        message = tostring(message),
+        message = string.format(...),
     })
 end
+
+local function started()
+    push_event("cyberok_self_defense_started")
+end
+
+local function stopped()
+    push_event("cyberok_self_defense_stopped")
+end
+
 
 local function execution_options(filepath)
     return string.format(
@@ -162,14 +171,15 @@ local function activate()
     local undo, errors = HARDENED:run()
     if not undo then
         for _, v in ipairs(errors) do
-            __log.errorf("failed to activate self-defense: %s", v)
+            error("activation_error", "failed to activate self-defense: %s", v)
         end
         return nil, errors[1]
     end
+    started()
     local backup_path = path.combine(path.dir((__api.get_exec_path())), "self-defense.bak")
     local ok, err_save = save(undo, backup_path)
     if not ok then
-        __log.errorf("failed to save backup: %s", err_save)
+        error("backup_save_error", "failed to save backup: %s", err_save)
         return nil, err_save
     end
     return true
@@ -182,17 +192,28 @@ local function deactivate()
     local backup_path = path.combine(path.dir((__api.get_exec_path())), "self-defense.bak")
     local undo, err = load(backup_path)
     if not undo then
-        __log.errorf("failed to load backup: %s", err)
+        error("backup_load_error", "failed to load backup: %s", err)
         return nil, err
     end
     local _, errors = undo:run()
     if #errors > 0 then
         for _, v in ipairs(errors) do
-            __log.errorf("failed to deactivate self-defense: %s", v)
+            error("deactivation_error", "failed to deactivate self-defense: %s", v)
         end
         return nil, errors[1]
     end
+    stopped()
     return true
+end
+
+local function update_config()
+    local prefix_db = __gid .. "."
+    local fields_schema = __config.get_fields_schema()
+    local event_config = __config.get_current_event_config()
+    local module_info = __config.get_module_info()
+
+    event_engine = CEventEngine(fields_schema, event_config, module_info, prefix_db, false)
+    action_engine = CActionEngine({}, false)
 end
 
 ---Handles control messages.
@@ -202,13 +223,7 @@ local function control(cmtype, data)
     if cmtype == "quit" and data == "module_remove" then
         return deactivate()
     elseif cmtype == "update_config" then
-        local prefix_db = __gid .. "."
-        local fields_schema = __config.get_fields_schema()
-        local event_config = __config.get_current_event_config()
-        local module_info = __config.get_module_info()
-
-        event_engine = CEventEngine(fields_schema, event_config, module_info, prefix_db, false)
-        action_engine = CActionEngine({}, false)
+        update_config()
     end
     return true
 end
@@ -216,6 +231,7 @@ end
 ---Module's entrypoint.
 ---@return string
 local function run()
+    update_config()
     __api.add_cbs({ control = control })
     activate()
     __api.await(-1)

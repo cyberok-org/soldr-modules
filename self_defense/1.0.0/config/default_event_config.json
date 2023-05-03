@@ -13,5 +13,15 @@
             "message"
         ],
         "type": "atomic"
+    },
+    "cyberok_self_defense_started": {
+        "actions": [],
+        "fields": [],
+        "type": "atomic"
+    },
+    "cyberok_self_defense_stopped": {
+        "actions": [],
+        "fields": [],
+        "type": "atomic"
     }
 }

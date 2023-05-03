@@ -44,11 +44,33 @@
                 "title": "ошибка",
                 "description": ""
             }
+        },
+        "cyberok_self_defense_started": {
+            "en": {
+                "title": "The \"Self-Defense\" module has started",
+                "description": ""
+            },
+            "ru": {
+                "title": "Модуль \"Самозащита\" запущен",
+                "description": ""
+            }
+        },
+        "cyberok_self_defense_stopped": {
+            "en": {
+                "title": "The \"Self-Defense\" module has stopped",
+                "description": ""
+            },
+            "ru": {
+                "title": "Модуль \"Самозащита\" остановлен",
+                "description": ""
+            }
         }
     },
     "action_config": {},
     "event_config": {
-        "cyberok_self_defense_error": {}
+        "cyberok_self_defense_error": {},
+        "cyberok_self_defense_started": {},
+        "cyberok_self_defense_stopped": {}
     },
     "tags": {}
 }
