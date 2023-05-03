@@ -15,12 +15,26 @@
         "type": "atomic"
     },
     "cyberok_self_defense_started": {
-        "actions": [],
+        "actions": [
+            {
+                "fields": [],
+                "module_name": "this",
+                "name": "log_to_db",
+                "priority": 10
+            }
+        ],
         "fields": [],
         "type": "atomic"
     },
     "cyberok_self_defense_stopped": {
-        "actions": [],
+        "actions": [
+            {
+                "fields": [],
+                "module_name": "this",
+                "name": "log_to_db",
+                "priority": 10
+            }
+        ],
         "fields": [],
         "type": "atomic"
     }
