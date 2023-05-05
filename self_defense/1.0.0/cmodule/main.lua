@@ -22,7 +22,7 @@ end
 
 local function error(name, ...)
     push_event("cyberok_self_defense_error", {
-        name    = name,
+        name = name,
         message = string.format(...),
     })
 end
@@ -34,7 +34,6 @@ end
 local function stopped()
     push_event("cyberok_self_defense_stopped")
 end
-
 
 local function execution_options(filepath)
     return string.format(
@@ -161,7 +160,9 @@ local function load(backup_path)
     if not backup then
         return nil, err
     end
-    return script.load(json.decode(backup:read("*a")), registry, process, security)
+    local cmd = script.load(json.decode(backup:read("*a")), registry, process, security)
+    backup:close()
+    return cmd
 end
 
 ---Activates the self-defense of the current process.
@@ -202,6 +203,7 @@ local function deactivate()
         end
         return nil, errors[1]
     end
+    os.remove(backup_path)
     stopped()
     return true
 end

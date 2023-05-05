@@ -112,13 +112,16 @@ end
 
 ---Returns a dictionary representation of the RegValue.
 ---@param value RegValue
----@return table
+---@return table|nil
 local function value_save(value)
-    return {
-        type = tonumber(value.type),
-        data = hex_dump(value.data, value.size),
-        size = value.size,
-    }
+    if value then
+        return {
+            type = tonumber(value.type),
+            data = hex_dump(value.data, value.size),
+            size = value.size,
+        }
+    end
+    return nil
 end
 
 ---Returns a dictionary representation of the keyvalue command.
@@ -186,7 +189,10 @@ local function path_load(path)
 end
 
 local function value_load(value)
-    return registry.value_bin(value.data)
+    if value then
+        return registry.value_bin(value.data)
+    end
+    return nil
 end
 
 ---Loads registry commands from the specified `cmd_dict` table.
