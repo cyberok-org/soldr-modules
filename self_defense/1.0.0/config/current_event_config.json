@@ -1,0 +1,41 @@
+{
+    "cyberok_self_defense_error": {
+        "actions": [
+            {
+                "fields": [],
+                "module_name": "this",
+                "name": "log_to_db",
+                "priority": 10
+            }
+        ],
+        "fields": [
+            "name",
+            "message"
+        ],
+        "type": "atomic"
+    },
+    "cyberok_self_defense_started": {
+        "actions": [
+            {
+                "fields": [],
+                "module_name": "this",
+                "name": "log_to_db",
+                "priority": 10
+            }
+        ],
+        "fields": [],
+        "type": "atomic"
+    },
+    "cyberok_self_defense_stopped": {
+        "actions": [
+            {
+                "fields": [],
+                "module_name": "this",
+                "name": "log_to_db",
+                "priority": 10
+            }
+        ],
+        "fields": [],
+        "type": "atomic"
+    }
+}

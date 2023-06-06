@@ -1,0 +1,76 @@
+{
+    "module": {
+        "en": {
+            "title": "Self-Defense",
+            "description": "Protecting the agent from attacks"
+        },
+        "ru": {
+            "title": "Самозащита",
+            "description": "Защита агента от атак"
+        }
+    },
+    "config": {},
+    "secure_config": {},
+    "fields": {
+        "message": {
+            "en": {
+                "title": "message",
+                "description": "Error text"
+            },
+            "ru": {
+                "title": "ошибка",
+                "description": "Текст ошибки"
+            }
+        },
+        "name": {
+            "en": {
+                "title": "name",
+                "description": "name"
+            },
+            "ru": {
+                "title": "имя ошибки",
+                "description": "имя ошибки"
+            }
+        }
+    },
+    "actions": {},
+    "events": {
+        "cyberok_self_defense_error": {
+            "en": {
+                "title": "error",
+                "description": ""
+            },
+            "ru": {
+                "title": "ошибка",
+                "description": ""
+            }
+        },
+        "cyberok_self_defense_started": {
+            "en": {
+                "title": "The \"Self-Defense\" module has started",
+                "description": ""
+            },
+            "ru": {
+                "title": "Модуль \"Самозащита\" запущен",
+                "description": ""
+            }
+        },
+        "cyberok_self_defense_stopped": {
+            "en": {
+                "title": "The \"Self-Defense\" module has stopped",
+                "description": ""
+            },
+            "ru": {
+                "title": "Модуль \"Самозащита\" остановлен",
+                "description": ""
+            }
+        }
+    },
+    "action_config": {},
+    "event_config": {
+        "cyberok_self_defense_error": {},
+        "cyberok_self_defense_started": {},
+        "cyberok_self_defense_stopped": {}
+    },
+    "tags": {}
+}
